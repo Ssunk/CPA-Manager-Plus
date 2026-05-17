@@ -3,7 +3,7 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
 )
 
 func WithCORS(cfg config.Config, next http.HandlerFunc) http.HandlerFunc {

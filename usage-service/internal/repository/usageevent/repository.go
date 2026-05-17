@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/model"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/model"
 )
 
 type Repository interface {

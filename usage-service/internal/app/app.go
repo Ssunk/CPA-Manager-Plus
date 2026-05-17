@@ -5,9 +5,9 @@ import (
 	"io/fs"
 	"time"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
 )
 
 type Options struct {

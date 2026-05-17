@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/model"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/model"
 )
 
 type Repository interface {

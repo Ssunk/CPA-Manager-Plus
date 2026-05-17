@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
 )
 
 type SaveRequest struct {

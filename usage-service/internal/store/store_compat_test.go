@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/usage"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/usage"
 )
 
 func TestStoreCompatMigratesLegacyUsageEventSchema(t *testing.T) {

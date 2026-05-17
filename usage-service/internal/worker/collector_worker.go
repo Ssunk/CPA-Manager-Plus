@@ -4,10 +4,10 @@ import (
 	"context"
 	"log"
 
-	collectorpkg "github.com/seakee/cpa-manager/usage-service/internal/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	collectorservice "github.com/seakee/cpa-manager/usage-service/internal/service/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
+	collectorpkg "github.com/seakee/cpa-manager-plus/usage-service/internal/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	collectorservice "github.com/seakee/cpa-manager-plus/usage-service/internal/service/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
 )
 
 type CollectorWorker struct {

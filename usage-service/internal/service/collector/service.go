@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	collectorpkg "github.com/seakee/cpa-manager/usage-service/internal/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
+	collectorpkg "github.com/seakee/cpa-manager-plus/usage-service/internal/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
 )
 
 type Service struct {

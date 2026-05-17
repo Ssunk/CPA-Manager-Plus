@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/app"
-	"github.com/seakee/cpa-manager/usage-service/internal/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	"github.com/seakee/cpa-manager/usage-service/internal/http/router"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/app"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/http/router"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
 )
 
 //go:embed web/management.html
@@ -35,7 +35,7 @@ func New(cfg config.Config, store *store.Store, collector *collector.Manager) *S
 		serviceID,
 	)
 	return &Server{
-		handler: router.New(appCtx),
+		handler: router.NewGin(appCtx),
 	}
 }
 

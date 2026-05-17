@@ -11,11 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
-	"github.com/seakee/cpa-manager/usage-service/internal/testutil"
-	"github.com/seakee/cpa-manager/usage-service/internal/usage"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/testutil"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/usage"
 )
 
 func newCompatHandler(t *testing.T, cfg config.Config, setup *store.Setup) (http.Handler, *store.Store) {

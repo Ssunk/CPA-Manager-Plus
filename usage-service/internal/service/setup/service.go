@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	collectorservice "github.com/seakee/cpa-manager/usage-service/internal/service/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/service/cpa"
-	"github.com/seakee/cpa-manager/usage-service/internal/service/managerconfig"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	collectorservice "github.com/seakee/cpa-manager-plus/usage-service/internal/service/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/service/cpa"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/service/managerconfig"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
 )
 
 type Request struct {

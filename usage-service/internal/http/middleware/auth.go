@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/http/response"
-	"github.com/seakee/cpa-manager/usage-service/internal/service/managerconfig"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/http/response"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/service/managerconfig"
 )
 
 func AuthorizeIfConfigured(w http.ResponseWriter, r *http.Request, managerConfigService *managerconfig.Service) bool {

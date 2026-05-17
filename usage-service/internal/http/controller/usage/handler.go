@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/app"
-	"github.com/seakee/cpa-manager/usage-service/internal/http/middleware"
-	"github.com/seakee/cpa-manager/usage-service/internal/http/response"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/app"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/http/middleware"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/http/response"
 )
 
 const maxUsageImportBytes int64 = 64 * 1024 * 1024

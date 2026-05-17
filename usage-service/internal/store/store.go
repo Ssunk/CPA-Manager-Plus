@@ -4,14 +4,14 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/model"
-	"github.com/seakee/cpa-manager/usage-service/internal/repository/apikeyalias"
-	"github.com/seakee/cpa-manager/usage-service/internal/repository/deadletter"
-	"github.com/seakee/cpa-manager/usage-service/internal/repository/modelprice"
-	"github.com/seakee/cpa-manager/usage-service/internal/repository/setting"
-	sqliterepo "github.com/seakee/cpa-manager/usage-service/internal/repository/sqlite"
-	"github.com/seakee/cpa-manager/usage-service/internal/repository/usageevent"
-	"github.com/seakee/cpa-manager/usage-service/internal/usage"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/model"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/repository/apikeyalias"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/repository/deadletter"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/repository/modelprice"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/repository/setting"
+	sqliterepo "github.com/seakee/cpa-manager-plus/usage-service/internal/repository/sqlite"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/repository/usageevent"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/usage"
 )
 
 type Setup = model.Setup

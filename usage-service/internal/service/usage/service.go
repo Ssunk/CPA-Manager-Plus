@@ -3,8 +3,8 @@ package usage
 import (
 	"context"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
-	usageparser "github.com/seakee/cpa-manager/usage-service/internal/usage"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
+	usageparser "github.com/seakee/cpa-manager-plus/usage-service/internal/usage"
 )
 
 type ImportResult struct {

@@ -3,7 +3,7 @@ package health
 import (
 	"net/http"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/http/response"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/http/response"
 )
 
 type Handler struct {

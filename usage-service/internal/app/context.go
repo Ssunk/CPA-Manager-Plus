@@ -3,17 +3,17 @@ package app
 import (
 	"io/fs"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	apikeyaliassvc "github.com/seakee/cpa-manager/usage-service/internal/service/apikeyalias"
-	collectorsvc "github.com/seakee/cpa-manager/usage-service/internal/service/collector"
-	managerconfigsvc "github.com/seakee/cpa-manager/usage-service/internal/service/managerconfig"
-	modelpricesvc "github.com/seakee/cpa-manager/usage-service/internal/service/modelprice"
-	panelsvc "github.com/seakee/cpa-manager/usage-service/internal/service/panel"
-	proxysvc "github.com/seakee/cpa-manager/usage-service/internal/service/proxy"
-	setupsvc "github.com/seakee/cpa-manager/usage-service/internal/service/setup"
-	usagesvc "github.com/seakee/cpa-manager/usage-service/internal/service/usage"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	apikeyaliassvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/apikeyalias"
+	collectorsvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/collector"
+	managerconfigsvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/managerconfig"
+	modelpricesvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/modelprice"
+	panelsvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/panel"
+	proxysvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/proxy"
+	setupsvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/setup"
+	usagesvc "github.com/seakee/cpa-manager-plus/usage-service/internal/service/usage"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
 )
 
 type Context struct {

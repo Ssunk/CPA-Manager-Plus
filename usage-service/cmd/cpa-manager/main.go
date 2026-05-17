@@ -9,12 +9,12 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/config"
-	"github.com/seakee/cpa-manager/usage-service/internal/httpapi"
-	collectorservice "github.com/seakee/cpa-manager/usage-service/internal/service/collector"
-	"github.com/seakee/cpa-manager/usage-service/internal/store"
-	"github.com/seakee/cpa-manager/usage-service/internal/worker"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/config"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/httpapi"
+	collectorservice "github.com/seakee/cpa-manager-plus/usage-service/internal/service/collector"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/store"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/worker"
 )
 
 func main() {

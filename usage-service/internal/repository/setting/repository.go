@@ -7,7 +7,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/seakee/cpa-manager/usage-service/internal/model"
+	"github.com/seakee/cpa-manager-plus/usage-service/internal/model"
 )
 
 const managerConfigKey = "manager_config_v1"

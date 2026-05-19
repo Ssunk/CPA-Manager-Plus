@@ -10,19 +10,13 @@ import {
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { Input } from '@/components/ui/Input';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { Select } from '@/components/ui/Select';
 import {
   IconChartLine,
   IconDownload,
   IconExternalLink,
   IconFileText,
-  IconRefreshCw,
-  IconSearch,
   IconSettings,
-  IconSlidersHorizontal,
-  IconTimer,
 } from '@/components/ui/icons';
 import {
   buildAccountRows,
@@ -65,6 +59,7 @@ import {
 import { AccountOverviewPanel } from '@/features/monitoring/components/AccountOverviewPanel';
 import { ApiKeySummaryPanel } from '@/features/monitoring/components/ApiKeySummaryPanel';
 import { MonitoringCustomRangeModal } from '@/features/monitoring/components/MonitoringCustomRangeModal';
+import { MonitoringFiltersPanel } from '@/features/monitoring/components/MonitoringFiltersPanel';
 import { MonitoringPriceModal } from '@/features/monitoring/components/MonitoringPriceModal';
 import { RealtimeEventsPanel } from '@/features/monitoring/components/RealtimeEventsPanel';
 import {
@@ -77,7 +72,6 @@ import {
   type AccountQuotaState,
   type AccountQuotaWindow,
 } from '@/features/monitoring/components/accountOverviewPresentation';
-import { MonitoringPanel } from '@/features/monitoring/components/MonitoringPanel';
 import { formatStatusWindowLabel } from '@/features/monitoring/model/statusWindow';
 import { useUsageData } from '@/features/monitoring/hooks/useUsageData';
 import { useHeaderRefresh } from '@/hooks/useHeaderRefresh';
@@ -101,24 +95,6 @@ import { sha256Hex } from '@/utils/apiKeyHash';
 import styles from './MonitoringCenterPage.module.scss';
 
 export { AccountExpandedDetails, AccountOverviewCard };
-
-const TIME_RANGE_OPTIONS: Array<{ value: MonitoringTimeRange; labelKey: string }> = [
-  { value: 'today', labelKey: 'monitoring.range_today' },
-  { value: '7d', labelKey: 'monitoring.range_7d' },
-  { value: '14d', labelKey: 'monitoring.range_14d' },
-  { value: '30d', labelKey: 'monitoring.range_30d' },
-  { value: 'all', labelKey: 'monitoring.range_all' },
-  { value: 'custom', labelKey: 'monitoring.range_custom' },
-];
-
-const AUTO_REFRESH_OPTIONS = [
-  { value: '0', labelKey: 'monitoring.auto_refresh_off' },
-  { value: '5000', labelKey: 'monitoring.auto_refresh_5s' },
-  { value: '10000', labelKey: 'monitoring.auto_refresh_10s' },
-  { value: '30000', labelKey: 'monitoring.auto_refresh_30s' },
-  { value: '60000', labelKey: 'monitoring.auto_refresh_60s' },
-  { value: '300000', labelKey: 'monitoring.auto_refresh_5m' },
-];
 
 const DEFAULT_ACCOUNT_PAGE_SIZE = ACCOUNT_OVERVIEW_TABLE_PAGE_SIZE_OPTIONS[0];
 const DEFAULT_REALTIME_PAGE_SIZE = 10;
@@ -1590,126 +1566,38 @@ export function MonitoringCenterPage() {
         </div>
       </section>
 
-      <MonitoringPanel className={styles.toolbarPanel}>
-        <div className={styles.controlBar}>
-          <div className={styles.segmentedControl}>
-            {TIME_RANGE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={`${styles.segmentButton} ${timeRange === option.value ? styles.segmentButtonActive : ''}`}
-                onClick={() => handleTimeRangeChange(option.value)}
-              >
-                {t(option.labelKey)}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.refreshControls}>
-            <div className={styles.autoRefreshField}>
-              <span className={styles.autoRefreshLabel}>
-                <IconTimer size={16} />
-                {t('monitoring.auto_refresh')}
-              </span>
-              <Select
-                className={styles.autoRefreshSelect}
-                triggerClassName={styles.autoRefreshSelectTrigger}
-                value={autoRefreshMs}
-                options={AUTO_REFRESH_OPTIONS.map((option) => ({
-                  value: option.value,
-                  label: t(option.labelKey),
-                }))}
-                onChange={setAutoRefreshMs}
-                ariaLabel={t('monitoring.auto_refresh')}
-                fullWidth={false}
-              />
-            </div>
-
-            <button
-              type="button"
-              className={styles.refreshButton}
-              onClick={() => void refreshAll()}
-              disabled={overallLoading}
-            >
-              <IconRefreshCw
-                size={16}
-                className={overallLoading ? styles.refreshIconSpinning : styles.refreshIcon}
-              />
-              <span className={styles.refreshButtonLabel}>{t('usage_stats.refresh')}</span>
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.filterBar}>
-          <div className={styles.filterGrid}>
-            <div className={styles.filterAccountStack}>
-              <Select
-                value={selectedAccount}
-                options={accountOptions}
-                onChange={handleAccountFilterChange}
-                ariaLabel={t('monitoring.filter_account')}
-              />
-            </div>
-            <Select
-              value={selectedProvider}
-              options={providerOptions}
-              onChange={setSelectedProvider}
-              ariaLabel={t('monitoring.filter_provider')}
-            />
-            <Select
-              value={selectedModel}
-              options={modelOptions}
-              onChange={setSelectedModel}
-              ariaLabel={t('monitoring.filter_model')}
-            />
-            <Select
-              value={selectedChannel}
-              options={channelOptions}
-              onChange={setSelectedChannel}
-              ariaLabel={t('monitoring.filter_channel')}
-            />
-            <Select
-              value={selectedApiKeyHash}
-              options={apiKeyOptions}
-              onChange={setSelectedApiKeyHash}
-              ariaLabel={t('monitoring.filter_api_key')}
-            />
-            <Select
-              value={selectedStatus}
-              options={statusOptions}
-              onChange={(value) => setSelectedStatus(value as StatusFilter)}
-              ariaLabel={t('monitoring.filter_status')}
-            />
-          </div>
-
-          <div className={styles.filterSearchRow}>
-            <div className={styles.filterSearchInputWrap}>
-              <Input
-                value={searchInput}
-                onChange={(event) => setSearchInput(event.target.value)}
-                placeholder={t('monitoring.search_placeholder')}
-                className={styles.filterSearchInput}
-                rightElement={<IconSearch size={16} />}
-                aria-label={t('monitoring.search_placeholder')}
-              />
-            </div>
-            <div className={styles.filterSearchAction}>
-              <button type="button" className={styles.clearButton} onClick={clearFilters}>
-                <IconSlidersHorizontal size={16} />
-                <span>{t('monitoring.clear_filters')}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {combinedError ? <div className={styles.errorBox}>{combinedError}</div> : null}
-        {!config?.usageStatisticsEnabled ? (
-          <div className={styles.callout}>
-            <strong>{t('monitoring.usage_disabled_title')}</strong>
-            <span>{t('monitoring.usage_disabled_body')}</span>
-          </div>
-        ) : null}
-      </MonitoringPanel>
+      <MonitoringFiltersPanel
+        timeRange={timeRange}
+        autoRefreshMs={autoRefreshMs}
+        selectedAccount={selectedAccount}
+        selectedProvider={selectedProvider}
+        selectedModel={selectedModel}
+        selectedChannel={selectedChannel}
+        selectedApiKeyHash={selectedApiKeyHash}
+        selectedStatus={selectedStatus}
+        searchInput={searchInput}
+        accountOptions={accountOptions}
+        providerOptions={providerOptions}
+        modelOptions={modelOptions}
+        channelOptions={channelOptions}
+        apiKeyOptions={apiKeyOptions}
+        statusOptions={statusOptions}
+        combinedError={combinedError}
+        usageStatisticsEnabled={Boolean(config?.usageStatisticsEnabled)}
+        overallLoading={overallLoading}
+        t={t}
+        onTimeRangeChange={handleTimeRangeChange}
+        onAutoRefreshChange={setAutoRefreshMs}
+        onRefreshAll={refreshAll}
+        onAccountFilterChange={handleAccountFilterChange}
+        onProviderChange={setSelectedProvider}
+        onModelChange={setSelectedModel}
+        onChannelChange={setSelectedChannel}
+        onApiKeyChange={setSelectedApiKeyHash}
+        onStatusChange={(value) => setSelectedStatus(value as StatusFilter)}
+        onSearchChange={setSearchInput}
+        onClearFilters={clearFilters}
+      />
 
       <section className={styles.summarySection}>
         <div className={styles.summaryHero}>

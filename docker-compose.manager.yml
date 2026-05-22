@@ -2,7 +2,7 @@ services:
   cpa-manager-plus:
     build:
       context: .
-      dockerfile: Dockerfile.usage-service
+      dockerfile: Dockerfile.manager-server
     image: seakee/cpa-manager-plus:latest
     restart: unless-stopped
     ports:

@@ -19,6 +19,7 @@ import { QuotaPage } from '@/pages/QuotaPage';
 import { MonitoringCenterPage } from '@/pages/MonitoringCenterPage';
 import { ModelPricesPage } from '@/pages/ModelPricesPage';
 import { CodexInspectionPage } from '@/pages/CodexInspectionPage';
+import { ServerCodexInspectionPage } from '@/pages/ServerCodexInspectionPage';
 import { ConfigPage } from '@/pages/ConfigPage';
 import { LogsPage } from '@/pages/LogsPage';
 import { SystemPage } from '@/pages/SystemPage';
@@ -75,10 +76,15 @@ const mainRoutes = [
   { path: '/oauth', element: <OAuthPage /> },
   { path: '/quota', element: <QuotaPage /> },
   { path: '/codex-inspection', element: <CodexInspectionPage /> },
+  { path: '/codex-inspection/server', element: <ServerCodexInspectionPage /> },
   { path: '/model-prices', element: <ModelPricesPage /> },
   { path: '/monitoring', element: <MonitoringCenterPage /> },
   { path: '/monitoring/model-prices', element: <Navigate to="/model-prices" replace /> },
   { path: '/monitoring/codex-inspection', element: <Navigate to="/codex-inspection" replace /> },
+  {
+    path: '/monitoring/codex-inspection/server',
+    element: <Navigate to="/codex-inspection/server" replace />,
+  },
   { path: '/config', element: <ConfigPage /> },
   { path: '/logs', element: <LogsPage /> },
   { path: '/system', element: <SystemPage /> },

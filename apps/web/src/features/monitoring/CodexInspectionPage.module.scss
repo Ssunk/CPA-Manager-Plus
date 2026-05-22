@@ -292,7 +292,7 @@
 
 .summaryGrid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -960,6 +960,411 @@
   margin-right: auto;
 }
 
+.serverError {
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--inspect-red) 34%, var(--inspect-line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--inspect-red) 8%, var(--inspect-surface));
+  color: var(--inspect-red);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.topErrorBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--inspect-red) 34%, var(--inspect-line));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--inspect-red) 8%, var(--inspect-surface));
+  color: var(--inspect-red);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.55;
+  word-break: break-word;
+}
+
+.topErrorBar :global(.button) {
+  flex-shrink: 0;
+}
+
+.topErrorActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.infoNote {
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--inspect-line);
+  border-radius: 12px;
+  background: var(--inspect-surface-elevated);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--inspect-muted);
+}
+
+.infoNote > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--inspect-ink);
+  font-weight: 700;
+}
+
+.infoNote > summary::-webkit-details-marker {
+  display: none;
+}
+
+.infoNote > summary::after {
+  content: '▾';
+  font-size: 10px;
+  color: var(--inspect-muted);
+  transition: transform 0.18s ease;
+}
+
+.infoNote[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.infoNoteList {
+  margin: 0;
+  padding: 0 14px 12px 30px;
+  display: grid;
+  gap: 4px;
+}
+
+.infoNoteList li {
+  list-style: disc;
+}
+
+.serverConfigActions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.serverUnsavedBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 10px;
+  border: 1px solid color-mix(in srgb, var(--inspect-amber) 34%, var(--inspect-line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--inspect-amber) 10%, var(--inspect-surface));
+  color: var(--inspect-amber);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.serverConfigGrid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.serverField {
+  grid-column: span 3;
+  min-width: 0;
+}
+
+.serverFieldHalf {
+  grid-column: span 6;
+  min-width: 0;
+}
+
+.serverFieldWide {
+  grid-column: span 12;
+}
+
+.advancedSection {
+  margin-top: 4px;
+  border: 1px solid var(--inspect-line);
+  border-radius: 14px;
+  background: var(--inspect-surface-elevated);
+}
+
+.advancedSection > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  list-style: none;
+  cursor: pointer;
+  color: var(--inspect-ink);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.advancedSection > summary::-webkit-details-marker {
+  display: none;
+}
+
+.advancedSection > summary::after {
+  content: '▾';
+  font-size: 10px;
+  color: var(--inspect-muted);
+  transition: transform 0.18s ease;
+}
+
+.advancedSection[open] > summary::after {
+  transform: rotate(180deg);
+}
+
+.advancedSummaryHint {
+  color: var(--inspect-muted);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.advancedBody {
+  padding: 4px 14px 14px;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scheduleSegmented {
+  display: inline-flex;
+  align-items: stretch;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--inspect-line) 86%, transparent);
+  background: color-mix(in srgb, var(--inspect-surface-elevated) 82%, var(--inspect-surface));
+}
+
+.scheduleSegmentButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-left: 1px solid color-mix(in srgb, var(--inspect-line) 72%, transparent);
+  background: transparent;
+  color: color-mix(in srgb, var(--inspect-muted) 84%, var(--inspect-ink));
+  font-size: 13px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.scheduleSegmentButton:first-child {
+  border-left: 0;
+  border-radius: 12px 0 0 12px;
+}
+
+.scheduleSegmentButton:last-child {
+  border-radius: 0 12px 12px 0;
+}
+
+.scheduleSegmentButton:hover {
+  color: var(--inspect-ink);
+  background: color-mix(in srgb, var(--inspect-accent) 5%, var(--inspect-surface));
+}
+
+.scheduleSegmentButtonActive,
+.scheduleSegmentButtonActive:hover {
+  background: color-mix(in srgb, var(--inspect-accent) 12%, var(--inspect-surface));
+  color: var(--inspect-accent-strong);
+}
+
+.scheduleSegmentButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.autoActionField {
+  grid-column: span 12;
+  display: grid;
+  gap: 10px;
+}
+
+.serverField :global(.form-group) {
+  margin-bottom: 0;
+}
+
+.serverFieldLabel {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--inspect-ink);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.serverDetailGrid {
+  display: grid;
+  gap: 16px;
+  align-items: start;
+}
+
+.serverDetailPanels {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+}
+
+.runHistoryList {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 260px);
+  gap: 10px;
+  padding: 4px 2px 6px;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.runHistoryCard {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--inspect-line);
+  border-radius: 14px;
+  background: var(--inspect-surface-elevated);
+  color: var(--inspect-ink);
+  text-align: left;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition:
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.runHistoryCard:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--inspect-accent) 32%, var(--inspect-line-strong));
+  background: var(--inspect-surface-hover);
+}
+
+.runHistoryCardActive {
+  border-color: color-mix(in srgb, var(--inspect-accent) 56%, var(--inspect-line-strong));
+  background: color-mix(in srgb, var(--inspect-accent) 8%, var(--inspect-surface));
+}
+
+.runHistoryCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.runHistoryCardId {
+  color: var(--inspect-muted);
+  font-family: var(--font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+}
+
+.runHistoryCardMeta {
+  display: grid;
+  gap: 2px;
+  color: var(--inspect-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.runHistoryCardActionPills {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.runHistoryCardPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.runHistoryCardPillDelete {
+  background: color-mix(in srgb, var(--inspect-red) 14%, var(--inspect-surface));
+  color: var(--inspect-red);
+}
+
+.runHistoryCardPillDisable {
+  background: color-mix(in srgb, var(--inspect-amber) 14%, var(--inspect-surface));
+  color: var(--inspect-amber);
+}
+
+.runHistoryCardPillEnable {
+  background: color-mix(in srgb, var(--inspect-green) 14%, var(--inspect-surface));
+  color: var(--inspect-green);
+}
+
+.runHistoryCardPillKeep {
+  background: var(--inspect-surface-muted);
+  color: var(--inspect-muted);
+}
+
+.resultFilterBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.logToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.logFilterGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.logToolbarRight {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emptyAction {
+  display: grid;
+  gap: 10px;
+  place-items: center;
+  padding: 16px 0;
+  color: var(--inspect-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.serverLogDetail {
+  display: block;
+  margin-top: 4px;
+  color: var(--inspect-muted);
+  font-family: var(--font-family-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
 .emptyBlock,
 .emptyBlockSmall {
   display: grid;
@@ -977,9 +1382,23 @@
   min-height: 80px;
 }
 
+@container codex-inspection-page (max-width: 1600px) {
+  .summaryGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 @container codex-inspection-page (max-width: 1280px) {
   .summaryGrid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .serverField {
+    grid-column: span 4;
+  }
+
+  .serverFieldWide {
+    grid-column: span 12;
   }
 }
 
@@ -1004,6 +1423,14 @@
   .settingsGridStrategy .settingsField,
   .settingsGridConcurrency .settingsField {
     grid-column: span 6;
+  }
+
+  .serverField {
+    grid-column: span 6;
+  }
+
+  .serverFieldWide {
+    grid-column: span 12;
   }
 
   .settingsAutoCards {
@@ -1031,6 +1458,8 @@
 
   .settingsField,
   .settingsFieldWide,
+  .serverField,
+  .serverFieldWide,
   .settingsGridStrategy .settingsField,
   .settingsGridConcurrency .settingsField {
     grid-column: span 12;
@@ -1046,5 +1475,19 @@
 
   .settingsActionsBar :global(button) {
     flex: 1 1 0;
+  }
+
+  .serverConfigActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .serverConfigActions :global(button) {
+    flex: 1 1 0;
+  }
+
+  .serverUnsavedBadge {
+    flex: 1 1 100%;
+    justify-content: center;
   }
 }

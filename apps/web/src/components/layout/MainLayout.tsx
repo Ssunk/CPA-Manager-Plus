@@ -160,6 +160,7 @@ type NavItem = {
   path: string;
   label: string;
   icon: ReactNode;
+  exact?: boolean;
 };
 
 export function MainLayout() {
@@ -373,6 +374,12 @@ export function MainLayout() {
         path: '/codex-inspection',
         label: t('nav.codex_inspection'),
         icon: sidebarIcons.codexInspection,
+        exact: true,
+      },
+      {
+        path: '/codex-inspection/server',
+        label: t('nav.server_codex_inspection'),
+        icon: sidebarIcons.codexInspection,
       },
     ],
     operationNavItems,
@@ -462,14 +469,14 @@ export function MainLayout() {
       ? location.pathname.slice(0, -1)
       : location.pathname;
   const currentPath = normalizedLocationPath === '/dashboard' ? '/' : normalizedLocationPath;
-  const matchesNavPath = (itemPath: string, pathname: string) =>
-    itemPath === '/'
-      ? pathname === '/'
-      : pathname === itemPath || pathname.startsWith(`${itemPath}/`);
+  const matchesNavPath = (item: NavItem, pathname: string) =>
+    item.path === '/' || item.exact
+      ? pathname === item.path
+      : pathname === item.path || pathname.startsWith(`${item.path}/`);
   const activeNavItem =
     [...navItems]
       .sort((a, b) => b.path.length - a.path.length)
-      .find((item) => matchesNavPath(item.path, currentPath)) ?? navItems[0];
+      .find((item) => matchesNavPath(item, currentPath)) ?? navItems[0];
   const currentRouteLabel = activeNavItem?.label ?? fullBrandName;
 
   return (
@@ -637,10 +644,10 @@ export function MainLayout() {
                   <NavLink
                     key={item.path}
                     to={item.path}
-                    end={item.path === '/'}
+                    end={item.path === '/' || item.exact}
                     className={({ isActive }) =>
                       `nav-item ${
-                        isActive || matchesNavPath(item.path, currentPath) ? 'active' : ''
+                        isActive || matchesNavPath(item, currentPath) ? 'active' : ''
                       }`
                     }
                     onClick={() => setSidebarOpen(false)}

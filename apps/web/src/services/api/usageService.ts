@@ -103,9 +103,34 @@ export interface ManagerExternalUsageServiceConfig {
   serviceBase: string;
 }
 
+export type ManagerCodexInspectionScheduleMode = 'interval' | 'time_points';
+export type ManagerCodexInspectionAutoActionMode = 'none' | 'disable' | 'delete';
+
+export interface ManagerCodexInspectionScheduleConfig {
+  mode?: ManagerCodexInspectionScheduleMode | string;
+  timePoints?: string[];
+  intervalMinutes?: number;
+  timeZone?: string;
+}
+
+export interface ManagerCodexInspectionConfig {
+  enabled?: boolean;
+  schedule?: ManagerCodexInspectionScheduleConfig;
+  targetType?: string;
+  workers?: number;
+  deleteWorkers?: number;
+  timeout?: number;
+  retries?: number;
+  userAgent?: string;
+  usedPercentThreshold?: number;
+  sampleSize?: number;
+  autoActionMode?: ManagerCodexInspectionAutoActionMode | string;
+}
+
 export interface ManagerConfig {
   cpaConnection: ManagerCPAConnectionConfig;
   collector: ManagerCollectorConfig;
+  codexInspection?: ManagerCodexInspectionConfig;
   externalUsageService: ManagerExternalUsageServiceConfig;
   updatedAtMs?: number;
 }
@@ -120,6 +145,68 @@ export interface ManagerConfigResponse {
   config: ManagerConfig;
   source?: 'env' | 'db' | '';
   cpaUsage?: CPAUsageConfig;
+}
+
+export interface CodexInspectionRun {
+  id: number;
+  triggerType: string;
+  triggerKey?: string;
+  status: string;
+  startedAtMs: number;
+  finishedAtMs?: number;
+  totalFiles: number;
+  probeSetCount: number;
+  sampledCount: number;
+  disabledCount: number;
+  enabledCount: number;
+  deleteCount: number;
+  disableCount: number;
+  enableCount: number;
+  keepCount: number;
+  error?: string;
+  settings?: ManagerCodexInspectionConfig;
+  createdAtMs: number;
+  updatedAtMs: number;
+}
+
+export interface CodexInspectionResult {
+  id: number;
+  runId: number;
+  accountKey: string;
+  fileName: string;
+  displayAccount: string;
+  authIndex?: string;
+  accountId?: string;
+  provider: string;
+  disabled: boolean;
+  status?: string;
+  state?: string;
+  action: string;
+  actionReason: string;
+  statusCode?: number;
+  usedPercent?: number;
+  isQuota: boolean;
+  error?: string;
+  createdAtMs: number;
+}
+
+export interface CodexInspectionLog {
+  id: number;
+  runId: number;
+  level: string;
+  message: string;
+  detail?: unknown;
+  createdAtMs: number;
+}
+
+export interface CodexInspectionRunsResponse {
+  items: CodexInspectionRun[];
+}
+
+export interface CodexInspectionRunDetail {
+  run: CodexInspectionRun;
+  results: CodexInspectionResult[];
+  logs: CodexInspectionLog[];
 }
 
 export interface ModelPricesResponse {
@@ -538,6 +625,7 @@ export interface MonitoringAnalyticsResponse {
 
 const USAGE_SERVICE_TIMEOUT_MS = 15 * 1000;
 const USAGE_SERVICE_TRANSFER_TIMEOUT_MS = 60 * 1000;
+const CODEX_INSPECTION_RUN_TIMEOUT_MS = 10 * 60 * 1000;
 export const USAGE_SERVICE_ID = 'cpa-manager-plus';
 export const LEGACY_USAGE_SERVICE_ID = 'cpa-manager';
 export const LEGACY_USAGE_SERVICE_IDS = [LEGACY_USAGE_SERVICE_ID, 'cpa-usage-service'] as const;
@@ -713,6 +801,58 @@ export const usageServiceApi = {
         { config },
         {
           timeout: USAGE_SERVICE_TIMEOUT_MS,
+          headers: authHeaders(managementKey),
+        }
+      );
+      return response.data;
+    });
+  },
+
+  listCodexInspectionRuns: async (
+    base: string,
+    managementKey?: string,
+    limit = 20
+  ): Promise<CodexInspectionRunsResponse> => {
+    return withUsageServiceError(async () => {
+      const response = await axios.get<CodexInspectionRunsResponse>(
+        buildUrl(base, '/v0/management/codex-inspection/runs'),
+        {
+          timeout: USAGE_SERVICE_TIMEOUT_MS,
+          headers: authHeaders(managementKey),
+          params: { limit },
+        }
+      );
+      return response.data;
+    });
+  },
+
+  getCodexInspectionRun: async (
+    base: string,
+    managementKey: string | undefined,
+    id: number
+  ): Promise<CodexInspectionRunDetail> => {
+    return withUsageServiceError(async () => {
+      const response = await axios.get<CodexInspectionRunDetail>(
+        buildUrl(base, `/v0/management/codex-inspection/runs/${id}`),
+        {
+          timeout: USAGE_SERVICE_TIMEOUT_MS,
+          headers: authHeaders(managementKey),
+        }
+      );
+      return response.data;
+    });
+  },
+
+  runCodexInspection: async (
+    base: string,
+    managementKey?: string
+  ): Promise<CodexInspectionRunDetail> => {
+    return withUsageServiceError(async () => {
+      const response = await axios.post<CodexInspectionRunDetail>(
+        buildUrl(base, '/v0/management/codex-inspection/run'),
+        undefined,
+        {
+          timeout: CODEX_INSPECTION_RUN_TIMEOUT_MS,
           headers: authHeaders(managementKey),
         }
       );

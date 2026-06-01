@@ -32,6 +32,7 @@ const UNKNOWN_AUTH_INDEX_KEY = '-';
 
 export const AUTH_FILES_CODEX_STATUS_FILTERS = [
   'all',
+  // Legacy URL/query value. The Auth Files UI now presents 401 as "needs reauth".
   'http_401',
   'reauth',
   'weekly_limited',
@@ -41,7 +42,6 @@ export const AUTH_FILES_CODEX_STATUS_FILTERS = [
 export type AuthFilesCodexStatusFilter = (typeof AUTH_FILES_CODEX_STATUS_FILTERS)[number];
 export type AuthFileCodexStatusBadgeTone = 'danger' | 'warning' | 'info';
 export type AuthFileCodexStatusBadgeKind =
-  | 'http_401'
   | 'reauth'
   | 'weekly_limited'
   | 'disabled_with_reset';
@@ -174,7 +174,7 @@ export const getAuthFileCodexStatus = (
     normalizeNumber(quota?.errorStatus);
   const action = typeof inspection?.action === 'string' ? inspection.action : '';
   const isHttp401 = statusCode === 401;
-  const needsReauth = action === 'reauth';
+  const needsReauth = action === 'reauth' || isHttp401;
   const inspectionReachedQuota =
     inspection?.isQuota === true &&
     (action === 'disable' ||
@@ -190,18 +190,9 @@ export const getAuthFileCodexStatus = (
       kind: 'reauth',
       tone: 'danger',
       labelKey: 'auth_files.codex_status_badge_reauth',
-      defaultLabel: 'Reauth needed',
+      defaultLabel: 'Needs reauth',
       titleKey: 'auth_files.codex_status_badge_reauth_title',
-      defaultTitle: 'HTTP 401: this Codex account needs a fresh login',
-    });
-  } else if (isHttp401) {
-    badges.push({
-      kind: 'http_401',
-      tone: 'danger',
-      labelKey: 'auth_files.codex_status_badge_http_401',
-      defaultLabel: 'HTTP 401',
-      titleKey: 'auth_files.codex_status_badge_http_401_title',
-      defaultTitle: 'The latest Codex check returned HTTP 401',
+      defaultTitle: 'Latest Codex check returned 401 or suggested reauthorization.',
     });
   }
 
@@ -210,9 +201,9 @@ export const getAuthFileCodexStatus = (
       kind: 'weekly_limited',
       tone: 'warning',
       labelKey: 'auth_files.codex_status_badge_weekly_limited',
-      defaultLabel: 'Weekly limited',
+      defaultLabel: '7d quota full',
       titleKey: 'auth_files.codex_status_badge_weekly_limited_title',
-      defaultTitle: 'Weekly Codex quota is at or above the configured limit',
+      defaultTitle: 'The Codex 7-day quota window is at or above the limit.',
     });
   }
 
@@ -221,9 +212,9 @@ export const getAuthFileCodexStatus = (
       kind: 'disabled_with_reset',
       tone: 'info',
       labelKey: 'auth_files.codex_status_badge_disabled_reset',
-      defaultLabel: `Weekly reset ${weeklyResetLabel}`,
+      defaultLabel: `Restores ${weeklyResetLabel}`,
       titleKey: 'auth_files.codex_status_badge_disabled_reset_title',
-      defaultTitle: `This disabled Codex account has a weekly reset time: ${weeklyResetLabel}`,
+      defaultTitle: `This disabled Codex account has a known quota recovery time: ${weeklyResetLabel}`,
       labelParams: { reset: weeklyResetLabel },
     });
   }
@@ -247,7 +238,7 @@ export const authFileMatchesCodexStatusFilter = (
   if (filter === 'all') return true;
   if (!status.isCodex) return false;
   if (filter === 'http_401') return status.isHttp401;
-  if (filter === 'reauth') return status.needsReauth;
+  if (filter === 'reauth') return status.needsReauth || status.isHttp401;
   if (filter === 'weekly_limited') return status.isWeeklyLimited;
   if (filter === 'disabled_with_reset') return status.hasDisabledWeeklyReset;
   return true;

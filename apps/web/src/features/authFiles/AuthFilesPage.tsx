@@ -471,7 +471,6 @@ export function AuthFilesPage() {
   const codexStatusFilterOptions = useMemo(
     () => [
       { value: 'all', label: t('auth_files.codex_status_filter_all') },
-      { value: 'http_401', label: t('auth_files.codex_status_filter_http_401') },
       { value: 'reauth', label: t('auth_files.codex_status_filter_reauth') },
       { value: 'weekly_limited', label: t('auth_files.codex_status_filter_weekly_limited') },
       {

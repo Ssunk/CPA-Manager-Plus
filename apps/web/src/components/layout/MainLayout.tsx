@@ -23,6 +23,7 @@ import {
   IconSidebarProviders,
   IconSidebarQuota,
   IconSidebarSystem,
+  IconSidebarUsage,
 } from '@/components/ui/icons';
 import { INLINE_LOGO_JPEG } from '@/assets/logoInline';
 import {
@@ -47,6 +48,7 @@ const sidebarIcons: Record<string, ReactNode> = {
   authFiles: <IconSidebarAuthFiles size={SIDEBAR_ICON_SIZE} />,
   oauth: <IconSidebarOauth size={SIDEBAR_ICON_SIZE} />,
   quota: <IconSidebarQuota size={SIDEBAR_ICON_SIZE} />,
+  usageAnalytics: <IconSidebarUsage size={SIDEBAR_ICON_SIZE} />,
   codexInspection: <IconSidebarInspection size={SIDEBAR_ICON_SIZE} />,
   monitoring: <IconSidebarMonitor size={SIDEBAR_ICON_SIZE} />,
   config: <IconSidebarConfig size={SIDEBAR_ICON_SIZE} />,
@@ -350,22 +352,31 @@ export function MainLayout() {
   }, [fetchConfig]);
 
   const fileLogsAvailable = isFileLogsAvailable(config);
+  const usageAnalyticsNavItem = featureAvailability.requestMonitoringAvailable
+    ? {
+        path: '/usage-analytics',
+        label: t('nav.usage_analytics'),
+        icon: sidebarIcons.usageAnalytics,
+      }
+    : null;
+  const monitoringNavItem = featureAvailability.requestMonitoringAvailable
+    ? {
+        path: '/monitoring',
+        label: t('nav.monitoring_center'),
+        icon: sidebarIcons.monitoring,
+      }
+    : null;
   const operationNavItems: NavItem[] = [
-    ...(featureAvailability.requestMonitoringAvailable
-      ? [
-          {
-            path: '/monitoring',
-            label: t('nav.monitoring_center'),
-            icon: sidebarIcons.monitoring,
-          },
-        ]
-      : []),
     ...(fileLogsAvailable
       ? [{ path: '/logs', label: t('nav.logs'), icon: sidebarIcons.logs }]
       : []),
   ];
   const navSections: NavItem[][] = [
-    [{ path: '/', label: t('nav.dashboard'), icon: sidebarIcons.dashboard }],
+    [
+      { path: '/', label: t('nav.dashboard'), icon: sidebarIcons.dashboard },
+      ...(usageAnalyticsNavItem ? [usageAnalyticsNavItem] : []),
+      ...(monitoringNavItem ? [monitoringNavItem] : []),
+    ],
     [
       { path: '/config', label: t('nav.config_management'), icon: sidebarIcons.config },
       { path: '/ai-providers', label: t('nav.ai_providers'), icon: sidebarIcons.aiProviders },

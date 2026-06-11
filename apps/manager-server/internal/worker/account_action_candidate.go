@@ -11,6 +11,7 @@ import (
 
 	collectorpkg "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/collector"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/model"
+	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/cpaauthfiles"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/store"
 	"github.com/seakee/cpa-manager-plus/apps/manager-server/internal/usage"
 )
@@ -18,11 +19,14 @@ import (
 const accountActionCandidateQueueSize = 256
 
 type AccountActionCandidateWorker struct {
-	store *store.Store
-	jobs  chan accountActionCandidate
+	store       *store.Store
+	jobs        chan accountActionCandidate
+	autoDisable bool
 }
 
 type accountActionCandidate struct {
+	BaseURL        string
+	ManagementKey  string
 	FileName       string
 	AuthIndex      string
 	DisplayAccount string
@@ -36,10 +40,15 @@ type accountActionCandidate struct {
 	SeenAtMS       int64
 }
 
-func NewAccountActionCandidateWorker(st *store.Store) *AccountActionCandidateWorker {
+func NewAccountActionCandidateWorker(st *store.Store, autoDisable ...bool) *AccountActionCandidateWorker {
+	enabled := false
+	if len(autoDisable) > 0 {
+		enabled = autoDisable[0]
+	}
 	return &AccountActionCandidateWorker{
-		store: st,
-		jobs:  make(chan accountActionCandidate, accountActionCandidateQueueSize),
+		store:       st,
+		jobs:        make(chan accountActionCandidate, accountActionCandidateQueueSize),
+		autoDisable: enabled,
 	}
 }
 
@@ -47,16 +56,20 @@ func (w *AccountActionCandidateWorker) Start(ctx context.Context) {
 	go w.run(ctx)
 }
 
-func (w *AccountActionCandidateWorker) HandleUsageEvents(ctx context.Context, _ collectorpkg.RuntimeConfig, events []usage.Event) {
+func (w *AccountActionCandidateWorker) HandleUsageEvents(ctx context.Context, cfg collectorpkg.RuntimeConfig, events []usage.Event) {
 	if w == nil || len(events) == 0 {
 		return
 	}
+	baseURL := strings.TrimSpace(cfg.CPAUpstreamURL)
+	managementKey := strings.TrimSpace(cfg.ManagementKey)
 	now := time.Now()
 	for _, event := range events {
 		candidate, ok := accountActionCandidateFromEvent(event, now)
 		if !ok {
 			continue
 		}
+		candidate.BaseURL = baseURL
+		candidate.ManagementKey = managementKey
 		select {
 		case w.jobs <- candidate:
 		case <-ctx.Done():
@@ -103,6 +116,62 @@ func (w *AccountActionCandidateWorker) handleCandidate(ctx context.Context, cand
 		return
 	}
 	log.Printf("[account-action] saved pending %s candidate %d for auth file %q", candidate.ActionType, item.ID, candidate.FileName)
+	w.maybeAutoDisable(ctx, item, candidate)
+}
+
+func (w *AccountActionCandidateWorker) maybeAutoDisable(ctx context.Context, item model.AccountActionCandidate, candidate accountActionCandidate) {
+	if w == nil || !w.autoDisable {
+		return
+	}
+	if !accountActionAutoDisableEligible(item.ActionType) {
+		log.Printf("[account-action] pending candidate %d action=%q is not eligible for auto-disable", item.ID, item.ActionType)
+		return
+	}
+	baseURL := strings.TrimSpace(candidate.BaseURL)
+	managementKey := strings.TrimSpace(candidate.ManagementKey)
+	if baseURL == "" || managementKey == "" {
+		_ = w.store.RecordAccountActionCandidateFailure(ctx, item.ID, "CPA runtime config is unavailable for auto-disable")
+		log.Printf("[account-action] pending candidate %d saved, but runtime config is unavailable for auto-disable", item.ID)
+		return
+	}
+	client := cpaauthfiles.New(nil)
+	files, err := client.Fetch(ctx, baseURL, managementKey)
+	if err != nil {
+		_ = w.store.RecordAccountActionCandidateFailure(ctx, item.ID, err.Error())
+		log.Printf("[account-action] pending candidate %d saved, but auth file verification failed for %q: %v", item.ID, item.AuthFileName, err)
+		return
+	}
+	current, err := cpaauthfiles.VerifyIdentity(files, cpaauthfiles.Identity{
+		AuthFileName:      item.AuthFileName,
+		AuthIndex:         item.AuthIndex,
+		Provider:          item.Provider,
+		AccountSnapshot:   item.AccountSnapshot,
+		AccountIDSnapshot: item.AccountIDSnapshot,
+	})
+	if err != nil {
+		_ = w.store.RecordAccountActionCandidateFailure(ctx, item.ID, "current CPA auth file identity mismatch; skipped auto-disable")
+		log.Printf("[account-action] pending candidate %d saved, but auth file identity mismatch for %q; skip auto-disable", item.ID, item.AuthFileName)
+		return
+	}
+	if current.Disabled {
+		log.Printf("[account-action] pending candidate %d saved; auth file %q already disabled", item.ID, item.AuthFileName)
+		return
+	}
+	if err := client.PatchDisabled(ctx, baseURL, managementKey, item.AuthFileName, true); err != nil {
+		_ = w.store.RecordAccountActionCandidateFailure(ctx, item.ID, err.Error())
+		log.Printf("[account-action] pending candidate %d saved, but failed to auto-disable auth file %q: %v", item.ID, item.AuthFileName, err)
+		return
+	}
+	log.Printf("[account-action] auto-disabled auth file %q for pending %s candidate %d", item.AuthFileName, item.ActionType, item.ID)
+}
+
+func accountActionAutoDisableEligible(actionType string) bool {
+	switch actionType {
+	case model.AccountActionTypeDelete, model.AccountActionTypeReauth:
+		return true
+	default:
+		return false
+	}
 }
 
 func accountActionCandidateFromEvent(event usage.Event, now time.Time) (accountActionCandidate, bool) {

@@ -19,6 +19,7 @@ import { OAuthPage } from '@/pages/OAuthPage';
 import { QuotaPage } from '@/pages/QuotaPage';
 import { UsageAnalyticsPage } from '@/pages/UsageAnalyticsPage';
 import { MonitoringCenterPage } from '@/pages/MonitoringCenterPage';
+import { AccountActionCandidatesPage } from '@/pages/AccountActionCandidatesPage';
 import { ModelPricesPage } from '@/pages/ModelPricesPage';
 import { CodexInspectionPage } from '@/pages/CodexInspectionPage';
 import { ServerCodexInspectionPage } from '@/pages/ServerCodexInspectionPage';
@@ -213,6 +214,14 @@ const mainRoutes = [
     element: (
       <FeatureGate feature="requestMonitoring">
         <MonitoringCenterPage />
+      </FeatureGate>
+    ),
+  },
+  {
+    path: '/monitoring/account-actions',
+    element: (
+      <FeatureGate feature="requestMonitoring">
+        <AccountActionCandidatesPage />
       </FeatureGate>
     ),
   },

@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useMonitoringAnalytics } from '@/features/monitoring/hooks/useMonitoringAnalytics';
+import { useUsageData } from '@/features/monitoring/hooks/useUsageData';
+import { buildApiKeyDisplayMap } from '@/features/monitoring/model/apiKeys';
+import { useConfigStore } from '@/stores';
 import {
   adaptUsageAnalyticsData,
   analyzeUsageBucket,
@@ -64,6 +67,8 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 
 export function useUsageAnalytics() {
+  const config = useConfigStore((state) => state.config);
+  const { apiKeyAliases, loadApiKeyAliases } = useUsageData({ loadUsageEvents: false });
   const [searchParams, setSearchParams] = useSearchParams();
   const [initialUiState] = useState<UsageAnalyticsUiState>(() =>
     buildUsageAnalyticsUiStateFromSearchParams(
@@ -92,6 +97,10 @@ export function useUsageAnalytics() {
     null
   );
   const browserTimeZone = useMemo(() => getBrowserTimeZone(), []);
+  const apiKeyDisplayMap = useMemo(
+    () => buildApiKeyDisplayMap(config?.apiKeys || [], apiKeyAliases || []),
+    [apiKeyAliases, config?.apiKeys]
+  );
   const setActiveTab = useCallback((tab: UsageAnalyticsTab) => {
     setActiveTabState(tab);
     writeUsageAnalyticsUiState({ activeTab: tab });
@@ -205,13 +214,19 @@ export function useUsageAnalytics() {
 
   const analyticsData = analytics.dataStale ? null : analytics.data;
   const adapted = useMemo(
-    () => adaptUsageAnalyticsData(analyticsData, resolvedGranularity, filters.apiKeyKeyword),
-    [analyticsData, filters.apiKeyKeyword, resolvedGranularity]
+    () =>
+      adaptUsageAnalyticsData(
+        analyticsData,
+        resolvedGranularity,
+        filters.apiKeyKeyword,
+        apiKeyDisplayMap
+      ),
+    [analyticsData, apiKeyDisplayMap, filters.apiKeyKeyword, resolvedGranularity]
   );
   const heatmapDateData = heatmapDateAnalytics.dataStale ? null : heatmapDateAnalytics.data;
   const heatmapDateRows = useMemo(
-    () => buildUsageHeatmap(heatmapDateData?.heatmap ?? []),
-    [heatmapDateData]
+    () => buildUsageHeatmap(heatmapDateData?.heatmap ?? [], apiKeyDisplayMap),
+    [apiKeyDisplayMap, heatmapDateData]
   );
   const heatmapDetailSource = selectedHeatmapDate ? heatmapDateRows : adapted.heatmap;
   const heatmapDateRefreshing = Boolean(
@@ -414,6 +429,7 @@ export function useUsageAnalytics() {
 
   const refresh = useCallback(() => {
     setNowMs(Date.now());
+    void loadApiKeyAliases();
     void analytics.refresh({ force: true });
     if (selectedApiKeyTimelineAnalytics.enabled) {
       void selectedApiKeyTimelineAnalytics.refresh({ force: true });
@@ -421,7 +437,13 @@ export function useUsageAnalytics() {
     if (selectedHeatmapDate) {
       void heatmapDateAnalytics.refresh({ force: true });
     }
-  }, [analytics, heatmapDateAnalytics, selectedApiKeyTimelineAnalytics, selectedHeatmapDate]);
+  }, [
+    analytics,
+    heatmapDateAnalytics,
+    loadApiKeyAliases,
+    selectedApiKeyTimelineAnalytics,
+    selectedHeatmapDate,
+  ]);
 
   return {
     filters,
@@ -435,6 +457,7 @@ export function useUsageAnalytics() {
     loading: analytics.loading,
     error: analytics.error,
     enabled: analytics.enabled,
+    apiKeyDisplayMap,
     unavailableReason: analytics.unavailableReason,
     lastRefreshedAt: analytics.lastRefreshedAt,
     refresh,

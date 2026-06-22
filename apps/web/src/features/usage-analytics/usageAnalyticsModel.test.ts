@@ -552,6 +552,132 @@ describe('usage analytics adapters', () => {
     expect(maskApiKeyHash('sk-live-raw-secret-value')).toBe('sk-****alue');
   });
 
+  it('resolves API key aliases by hash across analytics views', () => {
+    const displayMap = new Map([
+      ['abcdef1234567890', { label: 'Team Alpha Key', masked: 'sk-****7890' }],
+    ]);
+    const apiKeyRows = buildApiKeyRows(
+      [
+        {
+          id: 'hash-a',
+          api_key_hash: 'ABCDEF1234567890',
+          account_snapshot: 'team-alpha',
+          calls: 10,
+          success_calls: 9,
+          failure_calls: 1,
+          success_rate: 0.9,
+          input_tokens: 100,
+          output_tokens: 20,
+          cached_tokens: 5,
+          cache_read_tokens: 3,
+          cache_creation_tokens: 2,
+          total_tokens: 120,
+          cost: 1.25,
+          average_latency_ms: null,
+          last_seen_ms: NOW_MS,
+          models: [
+            {
+              model: 'gpt-4o',
+              calls: 10,
+              success_calls: 9,
+              failure_calls: 1,
+              success_rate: 0.9,
+              input_tokens: 100,
+              output_tokens: 20,
+              cached_tokens: 5,
+              cache_read_tokens: 3,
+              cache_creation_tokens: 2,
+              total_tokens: 120,
+              cost: 1.25,
+              last_seen_ms: NOW_MS,
+            },
+          ],
+        },
+      ],
+      undefined,
+      'team alpha key',
+      displayMap
+    );
+
+    expect(apiKeyRows[0]).toMatchObject({
+      apiKeyHash: 'abcdef1234567890',
+      label: 'Team Alpha Key',
+    });
+    expect(
+      buildUsageMatrix({
+        apiKeyRows,
+        credentialRows: [],
+        dimension: 'apiKeyModel',
+        metric: 'requestCount',
+      }).rowLabels
+    ).toEqual(['Team Alpha Key']);
+
+    const heatmapRows = buildUsageHeatmap(
+      [
+        {
+          weekday: 1,
+          hour: 9,
+          calls: 10,
+          success: 9,
+          failure: 1,
+          tokens: 120,
+          cost: 1.25,
+          failure_rate: 0.1,
+          api_key_contributors: [
+            {
+              key: 'ABCDEF1234567890',
+              label: 'ABCDEF1234567890',
+              calls: 10,
+              success: 9,
+              failure: 1,
+              tokens: 120,
+              cost: 1.25,
+              failure_rate: 0.1,
+              share: 1,
+            },
+          ],
+        },
+      ],
+      displayMap
+    );
+    expect(heatmapRows[0].apiKeyContributors?.[0].label).toBe('Team Alpha Key');
+
+    const drilldownRows = buildDrilldownPreview(
+      [
+        {
+          event_hash: 'event-a',
+          timestamp_ms: NOW_MS,
+          model: 'gpt-4o',
+          endpoint: '/v1/chat/completions',
+          method: 'POST',
+          path: '/v1/chat/completions',
+          auth_index: '0',
+          source: 'codex',
+          source_hash: 'source-a',
+          api_key_hash: 'ABCDEF1234567890',
+          account_snapshot: 'team-alpha',
+          auth_label_snapshot: 'prod',
+          auth_provider_snapshot: 'openai',
+          input_tokens: 60,
+          output_tokens: 40,
+          cached_tokens: 0,
+          cache_read_tokens: 0,
+          cache_creation_tokens: 0,
+          reasoning_tokens: 0,
+          total_tokens: 100,
+          latency_ms: 250,
+          failed: false,
+        },
+      ],
+      [],
+      displayMap
+    );
+    expect(drilldownRows[0]).toMatchObject({
+      apiKeyHash: 'abcdef1234567890',
+      apiKeyLabel: 'Team Alpha Key',
+    });
+  });
+
   it('builds API key/model matrices and key anomaly rows from ranked usage rows', () => {
     const apiKeyRows = buildApiKeyRows(
       [

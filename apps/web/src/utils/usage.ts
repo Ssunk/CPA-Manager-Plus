@@ -108,6 +108,8 @@ export interface UsageDetail {
   timestamp: string;
   source: string;
   auth_index: string | number | null;
+  client_ip?: string;
+  clientIp?: string;
   api_key_hash?: string;
   apiKeyHash?: string;
   account_snapshot?: string;

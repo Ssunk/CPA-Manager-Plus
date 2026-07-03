@@ -826,6 +826,7 @@ func TestAnalyticsSearchMatchesAccountSnapshotsWhenSourceIsMasked(t *testing.T) 
 	alice.AccountSnapshot = "alice.smith@example.com"
 	alice.AuthLabelSnapshot = "Alice Work Account"
 	alice.AuthFileSnapshot = "alice.json"
+	alice.ClientIP = "203.0.113.42"
 	bob := monitoringEvent("search-account-bob", fromMS+2_000, "gpt-b", "auth-b", "source-b", false, 1, 1, 0, 0, 2, nil)
 	bob.Source = "ali***@example.com"
 	bob.AccountSnapshot = "alina.team@example.com"
@@ -835,7 +836,7 @@ func TestAnalyticsSearchMatchesAccountSnapshotsWhenSourceIsMasked(t *testing.T) 
 		t.Fatalf("insert events: %v", err)
 	}
 
-	for _, query := range []string{"ALICE.SMITH@example.com", "Alice Work Account", "alice.json"} {
+	for _, query := range []string{"ALICE.SMITH@example.com", "Alice Work Account", "alice.json", "203.0.113.42"} {
 		resp, err := New(db).Analytics(ctx, Request{
 			FromMS:      fromMS,
 			ToMS:        toMS,
@@ -850,6 +851,9 @@ func TestAnalyticsSearchMatchesAccountSnapshotsWhenSourceIsMasked(t *testing.T) 
 		}
 		if resp.Events == nil || len(resp.Events.Items) != 1 || resp.Events.Items[0].EventHash != "search-account-alice" {
 			t.Fatalf("search %q events = %#v", query, resp.Events)
+		}
+		if resp.Events.Items[0].ClientIP != "203.0.113.42" {
+			t.Fatalf("search %q client ip = %q", query, resp.Events.Items[0].ClientIP)
 		}
 	}
 }

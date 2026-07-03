@@ -75,6 +75,7 @@ func TestStoreCompatMigratesLegacyUsageEventSchema(t *testing.T) {
 		"auth_file_snapshot",
 		"auth_provider_snapshot",
 		"auth_snapshot_at_ms",
+		"client_ip",
 		"executor_type",
 		"reasoning_effort",
 		"service_tier",
@@ -122,6 +123,7 @@ func TestStoreCompatMigratesLegacyUsageEventSchema(t *testing.T) {
 			AuthFileSnapshot:     "alice.json",
 			AuthProviderSnapshot: "codex",
 			AuthSnapshotAtMS:     1_778_000_000_100,
+			ClientIP:             "203.0.113.42",
 			ExecutorType:         "codex",
 			ReasoningEffort:      "medium",
 			ServiceTier:          "priority",
@@ -154,6 +156,7 @@ func TestStoreCompatMigratesLegacyUsageEventSchema(t *testing.T) {
 	}
 	if migrated.EventHash == "" || migrated.AccountSnapshot != "alice@example.com" ||
 		migrated.AuthProviderSnapshot != "codex" || migrated.ExecutorType != "codex" ||
+		migrated.ClientIP != "203.0.113.42" ||
 		migrated.ReasoningEffort != "medium" || migrated.ServiceTier != "priority" ||
 		migrated.CacheReadTokens != 4 || migrated.CacheCreationTokens != 1 ||
 		migrated.TTFTMS == nil || *migrated.TTFTMS != 320 ||

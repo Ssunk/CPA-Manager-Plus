@@ -51,6 +51,7 @@ var analyticsSearchTextColumns = []string{
 	"source",
 	"source_hash",
 	"api_key_hash",
+	"client_ip",
 	"auth_index",
 	"account_snapshot",
 	"auth_label_snapshot",
@@ -306,6 +307,7 @@ type EventPageItem struct {
 	Method                 string
 	Path                   string
 	AuthIndex              string
+	ClientIP               string
 	Source                 string
 	SourceHash             string
 	APIKeyHash             string
@@ -1579,6 +1581,7 @@ func (r *repository) EventsPageWithFilter(ctx context.Context, filter AnalyticsF
 	coalesce(method, ''),
 	coalesce(path, ''),
 	coalesce(auth_index, ''),
+	coalesce(client_ip, ''),
 	coalesce(source, ''),
 	coalesce(source_hash, ''),
 	coalesce(api_key_hash, ''),
@@ -1634,6 +1637,7 @@ limit ?`, args...)
 			&item.Method,
 			&item.Path,
 			&item.AuthIndex,
+			&item.ClientIP,
 			&item.Source,
 			&item.SourceHash,
 			&item.APIKeyHash,

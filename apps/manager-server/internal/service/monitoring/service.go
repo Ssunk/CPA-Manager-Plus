@@ -539,6 +539,7 @@ type EventRow struct {
 	Method                 string                        `json:"method"`
 	Path                   string                        `json:"path"`
 	AuthIndex              string                        `json:"auth_index"`
+	ClientIP               string                        `json:"client_ip,omitempty"`
 	Source                 string                        `json:"source"`
 	SourceHash             string                        `json:"source_hash"`
 	APIKeyHash             string                        `json:"api_key_hash"`
@@ -2156,6 +2157,7 @@ func buildEvents(page store.EventsPage, totalCount int64) *EventsResponse {
 			Method:                 item.Method,
 			Path:                   item.Path,
 			AuthIndex:              item.AuthIndex,
+			ClientIP:               item.ClientIP,
 			Source:                 item.Source,
 			SourceHash:             item.SourceHash,
 			APIKeyHash:             item.APIKeyHash,

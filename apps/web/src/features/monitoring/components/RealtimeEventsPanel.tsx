@@ -819,6 +819,14 @@ export function RealtimeEventsPanel({
                             {`${t('monitoring.realtime_api_key_label')}: ${apiKeyDisplay.display}`}
                           </small>
                         ) : null}
+                        {formatReadableText(row.clientIp) ? (
+                          <small
+                            className={styles.realtimeApiKeyLine}
+                            title={`${t('monitoring.client_ip_label')}: ${row.clientIp}`}
+                          >
+                            {`${t('monitoring.client_ip_label')}: ${row.clientIp}`}
+                          </small>
+                        ) : null}
                       </div>
                     </div>
                   </td>

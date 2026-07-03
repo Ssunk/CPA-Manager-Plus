@@ -27,6 +27,7 @@ type Event struct {
 	Path                  string `json:"path,omitempty"`
 	AuthType              string `json:"auth_type,omitempty"`
 	AuthIndex             string `json:"auth_index,omitempty"`
+	ClientIP              string `json:"client_ip,omitempty"`
 	Source                string `json:"source,omitempty"`
 	SourceHash            string `json:"source_hash,omitempty"`
 	APIKeyHash            string `json:"api_key_hash,omitempty"`
@@ -83,6 +84,7 @@ type Detail struct {
 	Timestamp             string                  `json:"timestamp"`
 	Source                string                  `json:"source"`
 	AuthIndex             string                  `json:"auth_index,omitempty"`
+	ClientIP              string                  `json:"client_ip,omitempty"`
 	APIKeyHash            string                  `json:"api_key_hash,omitempty"`
 	AccountSnapshot       string                  `json:"account_snapshot,omitempty"`
 	AuthLabelSnapshot     string                  `json:"auth_label_snapshot,omitempty"`
@@ -228,6 +230,7 @@ func NormalizeRaw(raw []byte) (Event, error) {
 		Path:                  path,
 		AuthType:              readString(record, "auth_type", "authType"),
 		AuthIndex:             authIndex,
+		ClientIP:              readString(record, "client_ip", "clientIp", "remote_addr", "remoteAddr"),
 		Source:                source,
 		SourceHash:            hashString(sourceRaw),
 		APIKeyHash:            hashString(apiKey),
@@ -303,6 +306,7 @@ func BuildPayload(events []Event) Payload {
 			Timestamp:             event.Timestamp,
 			Source:                event.Source,
 			AuthIndex:             event.AuthIndex,
+			ClientIP:              event.ClientIP,
 			APIKeyHash:            event.APIKeyHash,
 			AccountSnapshot:       event.AccountSnapshot,
 			AuthLabelSnapshot:     event.AuthLabelSnapshot,

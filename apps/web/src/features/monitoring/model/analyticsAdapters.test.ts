@@ -26,6 +26,7 @@ describe('buildUsageDetailsFromAnalyticsEvents', () => {
         method: 'POST',
         path: '/v1/chat/completions',
         auth_index: 'auth-1',
+        client_ip: '203.0.113.42',
         source: 'source.json',
         source_hash: 'source-hash',
         api_key_hash: 'api-key-hash',
@@ -54,6 +55,7 @@ describe('buildUsageDetailsFromAnalyticsEvents', () => {
     expect(details[0]).toMatchObject({
       __modelName: 'alias-model',
       __resolvedModel: 'upstream-model',
+      client_ip: '203.0.113.42',
       auth_project_id_snapshot: 'project-1',
       reasoning_effort: 'medium',
       latency_ms: 123,

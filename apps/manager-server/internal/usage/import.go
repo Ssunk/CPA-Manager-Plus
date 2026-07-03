@@ -371,6 +371,7 @@ func eventFromLegacyDetail(
 		Path:                  path,
 		AuthType:              readString(detail, "auth_type", "authType"),
 		AuthIndex:             authIndex,
+		ClientIP:              readString(detail, "client_ip", "clientIp", "remote_addr", "remoteAddr"),
 		Source:                maskSource(sourceRaw),
 		SourceHash:            hashString(sourceRaw),
 		APIKeyHash:            hashString(apiKey),

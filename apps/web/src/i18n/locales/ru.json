@@ -2179,6 +2179,7 @@
     "realtime_api_key_label": "API Key",
     "realtime_api_key_hash": "Хэш API Key",
     "realtime_api_key_masked": "Маскированный ключ",
+    "client_ip_label": "IP",
     "pagination_prev": "Назад",
     "pagination_prev_short": "Назад",
     "pagination_next": "Вперёд",

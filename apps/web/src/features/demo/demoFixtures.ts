@@ -1951,6 +1951,7 @@ const buildMonitoringAnalytics = (
       method: 'POST',
       path: profile.endpoint,
       auth_index: profile.authIndex,
+      client_ip: `203.0.113.${(index % 48) + 10}`,
       auth_file_snapshot: profile.authFile,
       source: profile.source,
       source_hash: profile.sourceHash,

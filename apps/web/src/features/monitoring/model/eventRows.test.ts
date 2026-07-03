@@ -69,13 +69,16 @@ describe('buildEventRows', () => {
       executor_type: 'codex',
       service_tier: 'priority',
       reasoning_effort: 'medium',
+      client_ip: '203.0.113.42',
     });
 
     expect(row.executorType).toBe('codex');
     expect(row.serviceTier).toBe('priority');
+    expect(row.clientIp).toBe('203.0.113.42');
     expect(row.searchText).toContain('codex');
     expect(row.searchText).toContain('priority');
     expect(row.searchText).toContain('medium');
+    expect(row.searchText).toContain('203.0.113.42');
   });
 
   it('keeps response header diagnostics searchable', () => {

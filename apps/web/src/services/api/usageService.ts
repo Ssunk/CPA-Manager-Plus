@@ -1157,6 +1157,7 @@ export interface MonitoringAnalyticsEventRow {
   method: string;
   path: string;
   auth_index: string;
+  client_ip?: string;
   source: string;
   source_hash: string;
   api_key_hash: string;

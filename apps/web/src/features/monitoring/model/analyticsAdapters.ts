@@ -898,6 +898,7 @@ export const buildUsageDetailsFromAnalyticsEvents = (
     timestamp: new Date(item.timestamp_ms).toISOString(),
     source: readString(item.source),
     auth_index: item.auth_index || null,
+    client_ip: readString(item.client_ip),
     api_key_hash: readString(item.api_key_hash),
     account_snapshot: readString(item.account_snapshot),
     auth_label_snapshot: readString(item.auth_label_snapshot),

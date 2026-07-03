@@ -320,6 +320,28 @@ func TestNormalizeRawReadsAnthropicCacheUsageFields(t *testing.T) {
 	}
 }
 
+func TestNormalizeRawPreservesClientIPAliasesAndBuildPayload(t *testing.T) {
+	event, err := NormalizeRaw([]byte(`{
+	  "timestamp": "2026-04-25T00:00:00Z",
+	  "model": "gpt-4.1",
+	  "endpoint": "POST /v1/chat/completions",
+	  "clientIp": " 203.0.113.42 ",
+	  "input_tokens": 1,
+	  "output_tokens": 2
+	}`))
+	if err != nil {
+		t.Fatalf("normalize: %v", err)
+	}
+	if event.ClientIP != "203.0.113.42" {
+		t.Fatalf("client ip = %q", event.ClientIP)
+	}
+	payload := BuildPayload([]Event{event})
+	detail := payload.APIs["POST /v1/chat/completions"].Models["gpt-4.1"].Details[0]
+	if detail.ClientIP != "203.0.113.42" {
+		t.Fatalf("detail client ip = %q", detail.ClientIP)
+	}
+}
+
 func TestNormalizeRawReadsAnthropicCacheUsageFieldsAtTopLevel(t *testing.T) {
 	payload := `{
 	  "timestamp": "2026-04-25T00:00:00Z",

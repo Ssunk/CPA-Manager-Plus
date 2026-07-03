@@ -41,6 +41,7 @@ const t = ((key: string, options?: Record<string, unknown>) => {
     'monitoring.realtime_api_key_hash': 'API Key hash',
     'monitoring.realtime_api_key_label': 'API Key',
     'monitoring.realtime_api_key_masked': 'Masked key',
+    'monitoring.client_ip_label': 'IP',
     'monitoring.request_status': 'Status',
     'monitoring.result_failed': 'Failed',
     'monitoring.result_success': 'Success',
@@ -252,6 +253,14 @@ describe('RealtimeEventsPanel', () => {
     expect(markup).toContain('Masked key: sk-...cdef');
     expect(markup).toContain('Executor: codex');
     expect(markup).not.toContain('>Executor: codex<');
+  });
+
+  it('renders client IP inside the source cell when present', () => {
+    const markup = renderPanel(baseRow({ clientIp: '203.0.113.42' }));
+
+    expect(markup).toContain('<th>Source / API Key</th>');
+    expect(markup).toContain('IP: 203.0.113.42');
+    expect(markup.match(/<col\b/g)).toHaveLength(12);
   });
 
   it('keeps long realtime model names constrained with a full title', () => {

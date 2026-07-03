@@ -47,6 +47,7 @@ export const buildEventRows = (
       }
 
       const authIndex = normalizeAuthIndex(detail.auth_index) ?? '-';
+      const clientIp = readString(detail.client_ip ?? detail.clientIp);
       const authMeta = authMetaMap.get(authIndex);
       const sourceMeta = resolveSourceDisplay(
         detail.source,
@@ -175,6 +176,7 @@ export const buildEventRows = (
         accountMasked,
         authIndex,
         authIndexMasked: maskAuthIndex(authIndex),
+        clientIp: clientIp || undefined,
         authLabel: authMeta?.label || snapshotLabel || sourceMasked,
         projectId,
         apiKeyHash,
@@ -231,6 +233,7 @@ export const buildEventRows = (
           reasoningEffort,
           serviceTier,
           executorType,
+          clientIp,
           normalizedFailStatusCode,
           failSummary,
           headerErrorKind,

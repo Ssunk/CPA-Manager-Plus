@@ -2179,6 +2179,7 @@
     "realtime_api_key_label": "API Key",
     "realtime_api_key_hash": "API Key 哈希",
     "realtime_api_key_masked": "脱敏密钥",
+    "client_ip_label": "IP",
     "pagination_prev": "上一页",
     "pagination_prev_short": "上一页",
     "pagination_next": "下一页",

@@ -478,6 +478,74 @@ func TestManagerConfigReadsLegacySetup(t *testing.T) {
 	}
 }
 
+func TestOpenCodeGoUsageHandler(t *testing.T) {
+	upstream := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/workspace/wrk_test/go" {
+			http.NotFound(w, r)
+			return
+		}
+		if cookie, err := r.Cookie("auth"); err != nil || cookie.Value != "opencode-cookie" {
+			http.Error(w, "missing auth cookie", http.StatusUnauthorized)
+			return
+		}
+		_, _ = w.Write([]byte(`rollingUsage:{status:"ok",resetInSec:10,usagePercent:20},weeklyUsage:{status:"ok",resetInSec:30,usagePercent:40},monthlyUsage:{status:"ok",resetInSec:50,usagePercent:60}`))
+	}))
+	t.Cleanup(upstream.Close)
+
+	cfg := testutil.NewConfig(t)
+	db := testutil.NewStore(t, cfg)
+	if err := db.SaveManagerConfig(context.Background(), store.ManagerConfig{
+		OpenCodeGo: store.ManagerOpenCodeGoConfig{
+			Entries: []store.ManagerOpenCodeGoEntry{
+				{
+					ID:          "entry-1",
+					Label:       "Main workspace",
+					WorkspaceID: "wrk_test",
+					AuthCookie:  "opencode-cookie",
+					Enabled:     true,
+					BaseURL:     upstream.URL,
+				},
+			},
+		},
+	}); err != nil {
+		t.Fatalf("save manager config: %v", err)
+	}
+	handler := New(cfg, db, collector.NewManager(cfg, db)).Handler()
+
+	unauthorized := testutil.Request(t, handler, http.MethodGet, "/v0/management/opencode-go/usage/entry-1", "", "")
+	testutil.RequireStatus(t, unauthorized, http.StatusUnauthorized)
+
+	missing := testutil.Request(t, handler, http.MethodGet, "/v0/management/opencode-go/usage/missing", "", testutil.AdminKey)
+	testutil.RequireStatus(t, missing, http.StatusNotFound)
+
+	success := testutil.Request(t, handler, http.MethodGet, "/v0/management/opencode-go/usage/entry-1", "", testutil.AdminKey)
+	testutil.RequireStatus(t, success, http.StatusOK)
+	var response struct {
+		ID          string `json:"id"`
+		Label       string `json:"label"`
+		WorkspaceID string `json:"workspaceId"`
+		WeeklyUsage struct {
+			UsagePercent int `json:"usagePercent"`
+		} `json:"weeklyUsage"`
+		MonthlyUsage struct {
+			ResetInSec int64 `json:"resetInSec"`
+		} `json:"monthlyUsage"`
+	}
+	testutil.DecodeJSON(t, success, &response)
+	if response.ID != "entry-1" || response.Label != "Main workspace" || response.WorkspaceID != "wrk_test" {
+		t.Fatalf("response identity = %#v", response)
+	}
+	if response.WeeklyUsage.UsagePercent != 40 || response.MonthlyUsage.ResetInSec != 50 {
+		t.Fatalf("response usage = %#v", response)
+	}
+}
+
+func TestOpenCodeGoUsageHandlerRequiresConfiguredEntry(t *testing.T) {
+	handler := newTestHandler(t, "http://example.test", false)
+	rr := testutil.Request(t, handler, http.MethodGet, "/v0/management/opencode-go/usage/entry-1", "", testutil.AdminKey)
+	testutil.RequireStatus(t, rr, http.StatusPreconditionFailed)
+}
+
 func TestSetupCanDisableRequestMonitoring(t *testing.T) {
 	configCalls := 0
 	enableCalls := 0

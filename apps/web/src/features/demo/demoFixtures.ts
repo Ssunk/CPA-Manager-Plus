@@ -595,6 +595,18 @@ const demoManagerConfig: ManagerConfigResponse = {
       enabled: true,
       serviceBase: DEMO_API_BASE,
     },
+    openCodeGo: {
+      entries: [
+        {
+          id: 'demo-opencode-go',
+          label: 'OpenCode Demo',
+          workspaceId: 'wrk_demo',
+          authCookie: 'demo-opencode-cookie',
+          enabled: true,
+          baseUrl: 'https://opencode.ai',
+        },
+      ],
+    },
     updatedAtMs: now() - hour,
   },
 };

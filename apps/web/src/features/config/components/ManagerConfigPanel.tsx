@@ -1,9 +1,11 @@
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
-import { IconEye, IconEyeOff, IconX } from '@/components/ui/icons';
+import { IconEye, IconEyeOff, IconPlus, IconTrash2, IconX } from '@/components/ui/icons';
+import type { ManagerOpenCodeGoEntry } from '@/services/api/usageService';
 import { AccountProcessingPolicySection } from './AccountProcessingPolicySection';
 import styles from '../ConfigPage.module.scss';
 
@@ -29,6 +31,7 @@ type ManagerConfigPanelProps = {
   managerRetentionSeconds: number;
   managerConfigSourceLabel: string;
   managerUsageStatisticsEnabled: boolean;
+  openCodeGoEntries: ManagerOpenCodeGoEntry[];
   onRefresh: () => void;
   onRequestMonitoringChange: (value: boolean) => void;
   onCPABaseInputChange: (value: string) => void;
@@ -39,6 +42,7 @@ type ManagerConfigPanelProps = {
   onPollIntervalMsChange: (value: string) => void;
   onBatchSizeChange: (value: string) => void;
   onQueryLimitChange: (value: string) => void;
+  onOpenCodeGoEntriesChange: (entries: ManagerOpenCodeGoEntry[]) => void;
 };
 
 export function ManagerConfigPanel({
@@ -63,6 +67,7 @@ export function ManagerConfigPanel({
   managerRetentionSeconds,
   managerConfigSourceLabel,
   managerUsageStatisticsEnabled,
+  openCodeGoEntries,
   onRefresh,
   onRequestMonitoringChange,
   onCPABaseInputChange,
@@ -73,10 +78,46 @@ export function ManagerConfigPanel({
   onPollIntervalMsChange,
   onBatchSizeChange,
   onQueryLimitChange,
+  onOpenCodeGoEntriesChange,
 }: ManagerConfigPanelProps) {
   const { t } = useTranslation();
+  const [visibleOpenCodeCookies, setVisibleOpenCodeCookies] = useState<Record<string, boolean>>({});
   const connectionInputDisabled =
     disableControls || managerLoading || managerSaving || panelHostedByUsageService !== true;
+  const openCodeControlsDisabled = disableControls || managerLoading || managerSaving;
+  const openCodeEntryIds = useMemo(
+    () => new Set(openCodeGoEntries.map((entry) => entry.id)),
+    [openCodeGoEntries]
+  );
+  const updateOpenCodeEntry = (index: number, patch: Partial<ManagerOpenCodeGoEntry>) => {
+    onOpenCodeGoEntriesChange(
+      openCodeGoEntries.map((entry, entryIndex) =>
+        entryIndex === index ? { ...entry, ...patch } : entry
+      )
+    );
+  };
+  const addOpenCodeEntry = () => {
+    let id = `opencode-${Date.now().toString(36)}`;
+    let suffix = 1;
+    while (openCodeEntryIds.has(id)) {
+      suffix += 1;
+      id = `opencode-${Date.now().toString(36)}-${suffix}`;
+    }
+    onOpenCodeGoEntriesChange([
+      ...openCodeGoEntries,
+      {
+        id,
+        label: '',
+        workspaceId: '',
+        authCookie: '',
+        enabled: true,
+        baseUrl: 'https://opencode.ai',
+      },
+    ]);
+  };
+  const removeOpenCodeEntry = (index: number) => {
+    onOpenCodeGoEntriesChange(openCodeGoEntries.filter((_, entryIndex) => entryIndex !== index));
+  };
 
   return (
     <div className={styles.managerConfigPanel}>
@@ -300,6 +341,128 @@ export function ManagerConfigPanel({
             }
           />
         </div>
+      </section>
+
+      <section className={styles.managerSection}>
+        <div className={styles.managerSectionHeader}>
+          <div>
+            <h3>{t('config_management.manager.opencode_go_title')}</h3>
+            <p>{t('config_management.manager.opencode_go_hint')}</p>
+          </div>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={addOpenCodeEntry}
+            disabled={openCodeControlsDisabled}
+          >
+            <IconPlus size={16} />
+            {t('config_management.manager.opencode_go_add')}
+          </Button>
+        </div>
+
+        {openCodeGoEntries.length === 0 ? (
+          <div className={styles.managerDependencyNote}>
+            {t('config_management.manager.opencode_go_empty')}
+          </div>
+        ) : (
+          <div className={styles.managerOpenCodeList}>
+            {openCodeGoEntries.map((entry, index) => {
+              const visible = visibleOpenCodeCookies[entry.id] ?? false;
+              return (
+                <div className={styles.managerOpenCodeItem} key={entry.id || index}>
+                  <div className={styles.managerOpenCodeItemHeader}>
+                    <ToggleSwitch
+                      label={t('config_management.manager.opencode_go_enabled')}
+                      checked={entry.enabled}
+                      onChange={(enabled) => updateOpenCodeEntry(index, { enabled })}
+                      disabled={openCodeControlsDisabled}
+                    />
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => removeOpenCodeEntry(index)}
+                      disabled={openCodeControlsDisabled}
+                      title={t('config_management.manager.opencode_go_delete')}
+                    >
+                      <IconTrash2 size={16} />
+                      {t('config_management.manager.opencode_go_delete')}
+                    </Button>
+                  </div>
+                  <div className={styles.managerOpenCodeGrid}>
+                    <Input
+                      label={t('config_management.manager.opencode_go_label')}
+                      value={entry.label}
+                      onChange={(event) => updateOpenCodeEntry(index, { label: event.target.value })}
+                      disabled={openCodeControlsDisabled}
+                      placeholder={t('config_management.manager.opencode_go_label_placeholder')}
+                    />
+                    <Input
+                      label={t('config_management.manager.opencode_go_workspace_id')}
+                      value={entry.workspaceId}
+                      onChange={(event) =>
+                        updateOpenCodeEntry(index, { workspaceId: event.target.value })
+                      }
+                      disabled={openCodeControlsDisabled}
+                      placeholder="wrk_..."
+                    />
+                    <Input
+                      label={t('config_management.manager.opencode_go_base_url')}
+                      value={entry.baseUrl ?? ''}
+                      onChange={(event) =>
+                        updateOpenCodeEntry(index, { baseUrl: event.target.value })
+                      }
+                      disabled={openCodeControlsDisabled}
+                      placeholder="https://opencode.ai"
+                    />
+                    <Input
+                      label={t('config_management.manager.opencode_go_auth_cookie')}
+                      type={visible ? 'text' : 'password'}
+                      value={entry.authCookie ?? ''}
+                      onChange={(event) =>
+                        updateOpenCodeEntry(index, { authCookie: event.target.value })
+                      }
+                      disabled={openCodeControlsDisabled}
+                      autoComplete="new-password"
+                      autoCorrect="off"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      data-lpignore="true"
+                      data-1p-ignore="true"
+                      className={styles.managerCpaKeyInput}
+                      rightElement={
+                        <button
+                          type="button"
+                          className={styles.managerKeyIconButton}
+                          onClick={() =>
+                            setVisibleOpenCodeCookies((current) => ({
+                              ...current,
+                              [entry.id]: !visible,
+                            }))
+                          }
+                          disabled={openCodeControlsDisabled}
+                          title={t(
+                            visible
+                              ? 'config_management.manager.opencode_go_cookie_hide'
+                              : 'config_management.manager.opencode_go_cookie_reveal'
+                          )}
+                          aria-label={t(
+                            visible
+                              ? 'config_management.manager.opencode_go_cookie_hide'
+                              : 'config_management.manager.opencode_go_cookie_reveal'
+                          )}
+                        >
+                          {visible ? <IconEyeOff size={16} /> : <IconEye size={16} />}
+                        </button>
+                      }
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </section>
 
       <section className={styles.managerSection}>

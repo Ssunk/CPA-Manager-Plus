@@ -25,6 +25,7 @@ import {
   XAI_CONFIG
 } from '@/components/quota';
 import { CodexReauthDialog } from '@/features/oauth/CodexReauthDialog';
+import { OpenCodeGoQuotaSection } from './OpenCodeGoQuotaSection';
 import {
   createCodexReauthTargetFromAuthFile,
   type CodexReauthTarget,
@@ -59,6 +60,7 @@ export function QuotaPage() {
   }));
   const [codexReauthTarget, setCodexReauthTarget] = useState<CodexReauthTarget | null>(null);
   const [headerSnapshots, setHeaderSnapshots] = useState<UsageHeaderSnapshot[]>([]);
+  const [managerConfigRefreshToken, setManagerConfigRefreshToken] = useState(0);
   const [accountDisplayModes, setAccountDisplayModes] = useState(() => ({
     ...initialUiState.current.accountDisplayModes,
   }));
@@ -115,6 +117,7 @@ export function QuotaPage() {
 
   const handleHeaderRefresh = useCallback(async () => {
     await Promise.all([loadConfig(), loadFiles(), loadHeaderSnapshots()]);
+    setManagerConfigRefreshToken((value) => value + 1);
   }, [loadConfig, loadFiles, loadHeaderSnapshots]);
 
   useHeaderRefresh(handleHeaderRefresh);
@@ -204,6 +207,14 @@ export function QuotaPage() {
           />
         </div>
       </div>
+
+      <OpenCodeGoQuotaSection
+        managerServiceBase={managerServiceBase}
+        managementKey={managementKey}
+        disabled={disableControls || !managerServiceBase}
+        searchQuery={searchQuery}
+        refreshToken={managerConfigRefreshToken}
+      />
 
       <QuotaSection
         config={CODEX_CONFIG}

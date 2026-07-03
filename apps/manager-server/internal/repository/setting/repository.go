@@ -290,6 +290,16 @@ func (r *repository) protectManagerConfig(cfg model.ManagerConfig) (model.Manage
 		return model.ManagerConfig{}, err
 	}
 	cfg.CPAConnection.ManagementKey = value
+	for idx := range cfg.OpenCodeGo.Entries {
+		if cfg.OpenCodeGo.Entries[idx].AuthCookie == "" {
+			continue
+		}
+		value, err := r.protector.ProtectString(cfg.OpenCodeGo.Entries[idx].AuthCookie)
+		if err != nil {
+			return model.ManagerConfig{}, err
+		}
+		cfg.OpenCodeGo.Entries[idx].AuthCookie = value
+	}
 	return cfg, nil
 }
 
@@ -302,5 +312,15 @@ func (r *repository) unprotectManagerConfig(cfg model.ManagerConfig) (model.Mana
 		return model.ManagerConfig{}, err
 	}
 	cfg.CPAConnection.ManagementKey = value
+	for idx := range cfg.OpenCodeGo.Entries {
+		if cfg.OpenCodeGo.Entries[idx].AuthCookie == "" {
+			continue
+		}
+		value, err := r.protector.UnprotectString(cfg.OpenCodeGo.Entries[idx].AuthCookie)
+		if err != nil {
+			return model.ManagerConfig{}, err
+		}
+		cfg.OpenCodeGo.Entries[idx].AuthCookie = value
+	}
 	return cfg, nil
 }

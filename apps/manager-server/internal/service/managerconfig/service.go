@@ -239,6 +239,7 @@ func (s *Service) MergeSubmittedManagerConfig(base store.ManagerConfig, submitte
 	next.Collector.TLSSkipVerify = submitted.Collector.TLSSkipVerify
 
 	next.CodexInspection = store.NormalizeCodexInspectionConfig(submitted.CodexInspection, next.CodexInspection)
+	next.OpenCodeGo = NormalizeOpenCodeGoConfig(submitted.OpenCodeGo)
 
 	next.ExternalUsageService.Enabled = false
 	next.ExternalUsageService.ServiceBase = ""
@@ -316,6 +317,31 @@ func CollectorMode(value string) string {
 
 func BoolPtr(value bool) *bool {
 	return &value
+}
+
+func NormalizeOpenCodeGoConfig(input store.ManagerOpenCodeGoConfig) store.ManagerOpenCodeGoConfig {
+	entries := make([]store.ManagerOpenCodeGoEntry, 0, len(input.Entries))
+	for _, entry := range input.Entries {
+		normalized := store.ManagerOpenCodeGoEntry{
+			ID:          strings.TrimSpace(entry.ID),
+			Label:       strings.TrimSpace(entry.Label),
+			WorkspaceID: strings.TrimSpace(entry.WorkspaceID),
+			AuthCookie:  model.OpenCodeAuthCookieValue(entry.AuthCookie),
+			Enabled:     entry.Enabled,
+			BaseURL:     strings.TrimRight(strings.TrimSpace(entry.BaseURL), "/"),
+		}
+		if normalized.BaseURL == "" {
+			normalized.BaseURL = model.DefaultOpenCodeGoBaseURL
+		}
+		if normalized.ID == "" {
+			normalized.ID = normalized.WorkspaceID
+		}
+		if normalized.Label == "" {
+			normalized.Label = normalized.WorkspaceID
+		}
+		entries = append(entries, normalized)
+	}
+	return store.ManagerOpenCodeGoConfig{Entries: entries}
 }
 
 func ManagerCollectorEnabled(cfg store.ManagerConfig) bool {

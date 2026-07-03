@@ -5,6 +5,7 @@ type ManagerConfig struct {
 	Collector            ManagerCollectorConfig            `json:"collector"`
 	CodexInspection      ManagerCodexInspectionConfig      `json:"codexInspection"`
 	ExternalUsageService ManagerExternalUsageServiceConfig `json:"externalUsageService"`
+	OpenCodeGo           ManagerOpenCodeGoConfig           `json:"openCodeGo"`
 	UpdatedAtMS          int64                             `json:"updatedAtMs,omitempty"`
 }
 
@@ -27,4 +28,17 @@ type ManagerCollectorConfig struct {
 type ManagerExternalUsageServiceConfig struct {
 	Enabled     bool   `json:"enabled"`
 	ServiceBase string `json:"serviceBase,omitempty"`
+}
+
+type ManagerOpenCodeGoConfig struct {
+	Entries []ManagerOpenCodeGoEntry `json:"entries"`
+}
+
+type ManagerOpenCodeGoEntry struct {
+	ID          string `json:"id"`
+	Label       string `json:"label"`
+	WorkspaceID string `json:"workspaceId"`
+	AuthCookie  string `json:"authCookie,omitempty"`
+	Enabled     bool   `json:"enabled"`
+	BaseURL     string `json:"baseUrl,omitempty"`
 }

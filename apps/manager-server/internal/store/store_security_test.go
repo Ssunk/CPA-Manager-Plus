@@ -51,12 +51,26 @@ func TestStoreEncryptsSetupAndManagerConfigSecrets(t *testing.T) {
 			PollIntervalMS: 500,
 			QueryLimit:     50000,
 		},
+		OpenCodeGo: ManagerOpenCodeGoConfig{
+			Entries: []ManagerOpenCodeGoEntry{
+				{
+					ID:          "entry-1",
+					Label:       "Main",
+					WorkspaceID: "wrk_test",
+					AuthCookie:  "opencode-cookie",
+					Enabled:     true,
+					BaseURL:     "https://opencode.ai",
+				},
+			},
+		},
 	}
 	if err := db.SaveManagerConfig(context.Background(), managerCfg); err != nil {
 		t.Fatalf("save manager config: %v", err)
 	}
 	rawManagerConfig := rawSettingValue(t, db, "manager_config_v1")
-	if strings.Contains(rawManagerConfig, "management-key") || !strings.Contains(rawManagerConfig, "enc:v1:") {
+	if strings.Contains(rawManagerConfig, "management-key") ||
+		strings.Contains(rawManagerConfig, "opencode-cookie") ||
+		!strings.Contains(rawManagerConfig, "enc:v1:") {
 		t.Fatalf("manager config was not encrypted at rest: %s", rawManagerConfig)
 	}
 	loadedManagerCfg, ok, err := db.LoadManagerConfig(context.Background())
@@ -65,6 +79,9 @@ func TestStoreEncryptsSetupAndManagerConfigSecrets(t *testing.T) {
 	}
 	if loadedManagerCfg.CPAConnection.ManagementKey != "management-key" {
 		t.Fatalf("loaded manager config management key = %q", loadedManagerCfg.CPAConnection.ManagementKey)
+	}
+	if got := loadedManagerCfg.OpenCodeGo.Entries[0].AuthCookie; got != "opencode-cookie" {
+		t.Fatalf("loaded opencode cookie = %q", got)
 	}
 }
 

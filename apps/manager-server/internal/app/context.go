@@ -17,6 +17,7 @@ import (
 	managerconfigsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/managerconfig"
 	modelpricesvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/modelprice"
 	monitoringsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/monitoring"
+	opencodegosvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/opencodego"
 	panelsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/panel"
 	proxysvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/proxy"
 	setupsvc "github.com/seakee/cpa-manager-plus/apps/manager-server/internal/service/setup"
@@ -46,6 +47,7 @@ type Context struct {
 	CodexInspectionService         *codexinspectionsvc.Service
 	MonitoringService              *monitoringsvc.Service
 	ModelPriceService              *modelpricesvc.Service
+	OpenCodeGoService              *opencodegosvc.Service
 	APIKeyAliasService             *apikeyaliassvc.Service
 	AccountActionService           *accountactionsvc.Service
 	AccountProcessingPolicyService *automationsvc.Service
@@ -87,6 +89,7 @@ func FromExisting(
 		CodexInspectionService:         codexinspectionsvc.New(st, managerConfigService),
 		MonitoringService:              monitoringsvc.New(st),
 		ModelPriceService:              modelpricesvc.NewMultiSource(st, modelPriceSyncURL, openRouterModelPriceSyncURL, managerConfigService),
+		OpenCodeGoService:              opencodegosvc.New(managerConfigService),
 		APIKeyAliasService:             apikeyaliassvc.New(st),
 		AccountActionService:           accountactionsvc.New(st, managerConfigService),
 		AccountProcessingPolicyService: accountProcessingPolicyService,

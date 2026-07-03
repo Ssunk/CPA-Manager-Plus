@@ -34,6 +34,7 @@ import {
   type CPAUsageConfig,
   type ManagerConfig,
   type ManagerConfigResponse,
+  type ManagerOpenCodeGoEntry,
 } from '@/services/api/usageService';
 import { detectApiBaseFromLocation } from '@/utils/connection';
 import { ManagerConfigPanel } from './components/ManagerConfigPanel';
@@ -51,6 +52,10 @@ const MANAGER_COLLECTOR_DEFAULT = {
   pollIntervalMs: 500,
   queryLimit: 50000,
   tlsSkipVerify: false,
+};
+
+const MANAGER_OPENCODE_GO_DEFAULT = {
+  entries: [] as ManagerOpenCodeGoEntry[],
 };
 
 const CONFIG_TAB_STORAGE_KEY = 'config-management:tab';
@@ -153,6 +158,29 @@ function managerPositiveIntegerInputChanged(
   return parsed !== resolveManagerPositiveIntegerBaseline(savedValue, fallback);
 }
 
+function normalizeManagerOpenCodeGoEntries(
+  entries: ManagerOpenCodeGoEntry[] | undefined
+): ManagerOpenCodeGoEntry[] {
+  return (entries ?? []).map((entry) => ({
+    id: (entry.id ?? '').trim(),
+    label: (entry.label ?? '').trim(),
+    workspaceId: (entry.workspaceId ?? '').trim(),
+    authCookie: (entry.authCookie ?? '').trim(),
+    enabled: entry.enabled,
+    baseUrl: (entry.baseUrl || 'https://opencode.ai').trim().replace(/\/+$/, ''),
+  }));
+}
+
+function managerOpenCodeGoEntriesChanged(
+  current: ManagerOpenCodeGoEntry[],
+  saved: ManagerOpenCodeGoEntry[] | undefined
+): boolean {
+  return (
+    JSON.stringify(normalizeManagerOpenCodeGoEntries(current)) !==
+    JSON.stringify(normalizeManagerOpenCodeGoEntries(saved))
+  );
+}
+
 // eslint-disable-next-line react-refresh/only-export-components
 export function resolveManagerFormDirty({
   managerConfig,
@@ -163,6 +191,7 @@ export function resolveManagerFormDirty({
   pollIntervalMs,
   batchSize,
   queryLimit,
+  openCodeGoEntries = [],
 }: {
   managerConfig: ManagerConfig | null;
   cpaBaseUrlInput: string;
@@ -172,6 +201,7 @@ export function resolveManagerFormDirty({
   pollIntervalMs: string;
   batchSize: string;
   queryLimit: string;
+  openCodeGoEntries?: ManagerOpenCodeGoEntry[];
 }): boolean {
   if (!managerConfig) return false;
 
@@ -190,6 +220,9 @@ export function resolveManagerFormDirty({
   const savedCollectorMode =
     savedCollector.collectorMode || MANAGER_COLLECTOR_DEFAULT.collectorMode;
   if ((collectorMode || MANAGER_COLLECTOR_DEFAULT.collectorMode) !== savedCollectorMode) {
+    return true;
+  }
+  if (managerOpenCodeGoEntriesChanged(openCodeGoEntries, managerConfig.openCodeGo?.entries)) {
     return true;
   }
 
@@ -297,6 +330,9 @@ export function ConfigPage() {
   );
   const [managerQueryLimit, setManagerQueryLimit] = useState(
     String(MANAGER_COLLECTOR_DEFAULT.queryLimit)
+  );
+  const [managerOpenCodeGoEntries, setManagerOpenCodeGoEntries] = useState<ManagerOpenCodeGoEntry[]>(
+    []
   );
 
   // Search state
@@ -435,6 +471,7 @@ export function ConfigPage() {
         pollIntervalMs: managerPollIntervalMs,
         batchSize: managerBatchSize,
         queryLimit: managerQueryLimit,
+        openCodeGoEntries: managerOpenCodeGoEntries,
       }),
     [
       managerBatchSize,
@@ -442,6 +479,7 @@ export function ConfigPage() {
       managerCPAManagementKeyInput,
       managerCollectorMode,
       managerConfig,
+      managerOpenCodeGoEntries,
       managerPollIntervalMs,
       managerQueryLimit,
       managerRequestMonitoringEnabled,
@@ -482,6 +520,11 @@ export function ConfigPage() {
       setManagerPollIntervalMs(String(collector.pollIntervalMs || MANAGER_COLLECTOR_DEFAULT.pollIntervalMs));
       setManagerBatchSize(String(collector.batchSize || MANAGER_COLLECTOR_DEFAULT.batchSize));
       setManagerQueryLimit(String(collector.queryLimit || MANAGER_COLLECTOR_DEFAULT.queryLimit));
+      setManagerOpenCodeGoEntries(
+        normalizeManagerOpenCodeGoEntries(
+          nextConfig.openCodeGo?.entries ?? MANAGER_OPENCODE_GO_DEFAULT.entries
+        )
+      );
       setManagerCPAManagementKeyInput('');
       setManagerCPAManagementKeyVisible(false);
     },
@@ -500,6 +543,7 @@ export function ConfigPage() {
       setManagerCPAUsage(null);
       setManagerConfigSource('');
       setManagerCPABaseInput('');
+      setManagerOpenCodeGoEntries([]);
       return;
     }
     if (!requestAuthKey) {
@@ -707,6 +751,9 @@ export function ConfigPage() {
         externalUsageService: {
           enabled: false,
           serviceBase: '',
+        },
+        openCodeGo: {
+          entries: normalizeManagerOpenCodeGoEntries(managerOpenCodeGoEntries),
         },
       };
       const savedCPABase = normalizeUsageServiceBase(managerConfig?.cpaConnection?.cpaBaseUrl || '');
@@ -1253,6 +1300,7 @@ export function ConfigPage() {
               managerRetentionSeconds={managerRetentionSeconds}
               managerConfigSourceLabel={managerConfigSourceLabel}
               managerUsageStatisticsEnabled={Boolean(managerCPAUsage?.usageStatisticsEnabled)}
+              openCodeGoEntries={managerOpenCodeGoEntries}
               onRefresh={() => void loadManagerConfig()}
               onRequestMonitoringChange={(value) => {
                 setManagerRequestMonitoringEnabled(value);
@@ -1282,6 +1330,7 @@ export function ConfigPage() {
               onQueryLimitChange={(value) => {
                 setManagerQueryLimit(value);
               }}
+              onOpenCodeGoEntriesChange={setManagerOpenCodeGoEntries}
             />
           ) : activeTab === 'visual' ? (
             <VisualConfigEditor

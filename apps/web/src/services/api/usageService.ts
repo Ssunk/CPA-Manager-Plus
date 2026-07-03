@@ -160,6 +160,19 @@ export interface ManagerExternalUsageServiceConfig {
   serviceBase: string;
 }
 
+export interface ManagerOpenCodeGoEntry {
+  id: string;
+  label: string;
+  workspaceId: string;
+  authCookie?: string;
+  enabled: boolean;
+  baseUrl?: string;
+}
+
+export interface ManagerOpenCodeGoConfig {
+  entries: ManagerOpenCodeGoEntry[];
+}
+
 export type ManagerCodexInspectionScheduleMode = 'interval' | 'time_points';
 export type ManagerCodexInspectionAutoActionMode = 'none' | 'enable' | 'disable' | 'delete';
 
@@ -189,7 +202,24 @@ export interface ManagerConfig {
   collector: ManagerCollectorConfig;
   codexInspection?: ManagerCodexInspectionConfig;
   externalUsageService: ManagerExternalUsageServiceConfig;
+  openCodeGo?: ManagerOpenCodeGoConfig;
   updatedAtMs?: number;
+}
+
+export interface OpenCodeUsageWindow {
+  status: string;
+  resetInSec: number;
+  usagePercent: number;
+}
+
+export interface OpenCodeGoUsageResponse {
+  id: string;
+  label: string;
+  workspaceId: string;
+  fetchedAtMs: number;
+  rollingUsage: OpenCodeUsageWindow;
+  weeklyUsage: OpenCodeUsageWindow;
+  monthlyUsage: OpenCodeUsageWindow;
 }
 
 export interface CPAUsageConfig {
@@ -1418,6 +1448,19 @@ const getDemoModelPriceSyncResponse = (models?: string[]): ModelPriceSyncRespons
   };
 };
 
+const getDemoOpenCodeGoUsage = (entryId: string): OpenCodeGoUsageResponse => {
+  const entry = getDemoManagerConfig().config.openCodeGo?.entries.find((item) => item.id === entryId);
+  return {
+    id: entry?.id ?? entryId,
+    label: entry?.label ?? 'OpenCode Demo',
+    workspaceId: entry?.workspaceId ?? 'wrk_demo',
+    fetchedAtMs: Date.now(),
+    rollingUsage: { status: 'ok', resetInSec: 18000, usagePercent: 12 },
+    weeklyUsage: { status: 'ok', resetInSec: 345600, usagePercent: 64 },
+    monthlyUsage: { status: 'ok', resetInSec: 1209600, usagePercent: 42 },
+  };
+};
+
 export const usageServiceApi = {
   getInfo: async (base: string): Promise<UsageServiceInfo> => {
     if (__DEMO_SITE__ && isDemoMode()) {
@@ -1630,6 +1673,27 @@ export const usageServiceApi = {
         }
       );
       return response.data.items ?? [];
+    });
+  },
+
+  getOpenCodeGoUsage: async (
+    base: string,
+    managementKey: string | undefined,
+    entryId: string
+  ): Promise<OpenCodeGoUsageResponse> => {
+    if (__DEMO_SITE__ && isDemoMode()) {
+      return getDemoOpenCodeGoUsage(entryId);
+    }
+
+    return withUsageServiceError(async () => {
+      const response = await axios.get<OpenCodeGoUsageResponse>(
+        buildUrl(base, `/v0/management/opencode-go/usage/${encodeURIComponent(entryId)}`),
+        {
+          timeout: USAGE_SERVICE_TIMEOUT_MS,
+          headers: authHeaders(managementKey),
+        }
+      );
+      return response.data;
     });
   },
 

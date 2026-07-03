@@ -77,6 +77,7 @@ type Include struct {
 	CredentialStats    bool              `json:"credential_stats"`
 	CredentialTimeline bool              `json:"credential_timeline"`
 	APIKeyStats        bool              `json:"api_key_stats"`
+	IPStats            bool              `json:"ip_stats"`
 	FilterOptions      bool              `json:"filter_options"`
 	Heatmap            bool              `json:"heatmap"`
 	AnomalyPoints      bool              `json:"anomaly_points"`
@@ -116,6 +117,7 @@ type Response struct {
 	CredentialStats    []CredentialStatRow       `json:"credential_stats,omitempty"`
 	CredentialTimeline []CredentialTimelinePoint `json:"credential_timeline,omitempty"`
 	APIKeyStats        []APIKeyStatRow           `json:"api_key_stats,omitempty"`
+	IPStats            []IPStatRow               `json:"ip_stats,omitempty"`
 	FilterOptions      *FilterOptions            `json:"filter_options,omitempty"`
 	TaskBuckets        []TaskBucketRow           `json:"task_buckets,omitempty"`
 	RecentFailures     []RecentFailure           `json:"recent_failures,omitempty"`
@@ -440,6 +442,30 @@ type APIKeyContextRow struct {
 	LastSeenMS           int64    `json:"last_seen_ms"`
 }
 
+type IPStatRow struct {
+	ID                   string   `json:"id"`
+	ClientIP             string   `json:"client_ip"`
+	AccountSnapshot      string   `json:"account_snapshot,omitempty"`
+	AuthLabelSnapshot    string   `json:"auth_label_snapshot,omitempty"`
+	AuthProviderSnapshot string   `json:"auth_provider_snapshot,omitempty"`
+	AuthIndices          []string `json:"auth_indices,omitempty"`
+	SourceHashes         []string `json:"source_hashes,omitempty"`
+	Calls                int64    `json:"calls"`
+	SuccessCalls         int64    `json:"success_calls"`
+	FailureCalls         int64    `json:"failure_calls"`
+	SuccessRate          float64  `json:"success_rate"`
+	InputTokens          int64    `json:"input_tokens"`
+	OutputTokens         int64    `json:"output_tokens"`
+	CachedTokens         int64    `json:"cached_tokens"`
+	CacheReadTokens      int64    `json:"cache_read_tokens"`
+	CacheCreationTokens  int64    `json:"cache_creation_tokens"`
+	ReasoningTokens      int64    `json:"reasoning_tokens"`
+	TotalTokens          int64    `json:"total_tokens"`
+	Cost                 float64  `json:"cost"`
+	AvgLatencyMS         *float64 `json:"average_latency_ms"`
+	LastSeenMS           int64    `json:"last_seen_ms"`
+}
+
 type FilterOptions struct {
 	AccountStats     []AccountStatRow  `json:"account_stats,omitempty"`
 	APIKeyStats      []APIKeyStatRow   `json:"api_key_stats,omitempty"`
@@ -756,6 +782,13 @@ func (s *Service) Analytics(ctx context.Context, req Request) (Response, error) 
 			return Response{}, err
 		}
 		response.APIKeyStats = buildAPIKeyStats(stats, prices)
+	}
+	if req.Include.IPStats {
+		stats, err := s.store.IPStatsWithFilter(ctx, filter)
+		if err != nil {
+			return Response{}, err
+		}
+		response.IPStats = buildIPStats(stats, prices)
 	}
 	if req.Include.FilterOptions {
 		options, err := s.filterOptions(ctx, filter, prices)
@@ -1433,6 +1466,14 @@ type apiKeyContextAccumulator struct {
 	latencySamples int64
 }
 
+type ipStatAccumulator struct {
+	row            IPStatRow
+	authIndices    map[string]struct{}
+	sourceHashes   map[string]struct{}
+	latencySum     float64
+	latencySamples int64
+}
+
 type credentialStatAccumulator struct {
 	row            CredentialStatRow
 	models         map[string]*AccountModelStatRow
@@ -1744,6 +1785,84 @@ func buildAPIKeyStats(stats []store.APIKeyModelStat, prices map[string]store.Mod
 	return result
 }
 
+func buildIPStats(stats []store.IPModelStat, prices map[string]store.ModelPrice) []IPStatRow {
+	grouped := map[string]*ipStatAccumulator{}
+	for _, stat := range stats {
+		id := strings.TrimSpace(stat.ClientIP)
+		if id == "" {
+			continue
+		}
+		entry := grouped[id]
+		if entry == nil {
+			entry = &ipStatAccumulator{
+				row: IPStatRow{
+					ID:                   id,
+					ClientIP:             id,
+					AccountSnapshot:      stat.AccountSnapshot,
+					AuthLabelSnapshot:    stat.AuthLabelSnapshot,
+					AuthProviderSnapshot: stat.AuthProviderSnapshot,
+				},
+				authIndices:  map[string]struct{}{},
+				sourceHashes: map[string]struct{}{},
+			}
+			grouped[id] = entry
+		}
+		fillIPStatSnapshots(&entry.row, stat)
+		addSetValue(entry.authIndices, stat.AuthIndex)
+		addSetValue(entry.sourceHashes, stat.SourceHash)
+		cost := costForIPModelStat(stat, prices)
+		addAccountTotals(
+			&entry.row.Calls,
+			&entry.row.SuccessCalls,
+			&entry.row.FailureCalls,
+			&entry.row.InputTokens,
+			&entry.row.OutputTokens,
+			&entry.row.CachedTokens,
+			&entry.row.CacheReadTokens,
+			&entry.row.CacheCreationTokens,
+			&entry.row.TotalTokens,
+			&entry.row.Cost,
+			stat.Calls,
+			stat.SuccessCalls,
+			stat.FailureCalls,
+			stat.InputTokens,
+			stat.OutputTokens,
+			stat.CachedTokens,
+			stat.CacheReadTokens,
+			stat.CacheCreationTokens,
+			stat.TotalTokens,
+			cost,
+		)
+		entry.row.ReasoningTokens += stat.ReasoningTokens
+		if stat.LastSeenMS > entry.row.LastSeenMS {
+			entry.row.LastSeenMS = stat.LastSeenMS
+		}
+		if stat.AvgLatencyMS.Valid && stat.LatencySamples > 0 {
+			entry.latencySum += stat.AvgLatencyMS.Float64 * float64(stat.LatencySamples)
+			entry.latencySamples += stat.LatencySamples
+		}
+	}
+
+	result := make([]IPStatRow, 0, len(grouped))
+	for _, entry := range grouped {
+		entry.row.SuccessRate = ratio(entry.row.SuccessCalls, entry.row.Calls)
+		entry.row.AuthIndices = sortedSetValues(entry.authIndices)
+		entry.row.SourceHashes = sortedSetValues(entry.sourceHashes)
+		if entry.latencySamples > 0 {
+			value := entry.latencySum / float64(entry.latencySamples)
+			entry.row.AvgLatencyMS = &value
+		}
+		result = append(result, entry.row)
+	}
+	sort.SliceStable(result, func(i, j int) bool {
+		return result[i].Cost > result[j].Cost ||
+			(result[i].Cost == result[j].Cost && result[i].Calls > result[j].Calls) ||
+			(result[i].Cost == result[j].Cost && result[i].Calls == result[j].Calls && result[i].LastSeenMS > result[j].LastSeenMS) ||
+			(result[i].Cost == result[j].Cost && result[i].Calls == result[j].Calls && result[i].LastSeenMS == result[j].LastSeenMS && result[i].ClientIP < result[j].ClientIP)
+	})
+	return result
+}
+
 func fillChannelShareSnapshots(row *ChannelShareRow, stat store.ChannelModelStat) {
 	if row.Source == "" {
 		row.Source = stat.Source
@@ -1814,6 +1933,21 @@ func fillAPIKeyStatSnapshots(row *APIKeyStatRow, apiKeyHash, accountSnapshot, au
 	}
 	if row.AuthProviderSnapshot == "" {
 		row.AuthProviderSnapshot = authProviderSnapshot
+	}
+}
+
+func fillIPStatSnapshots(row *IPStatRow, stat store.IPModelStat) {
+	if row.ClientIP == "" {
+		row.ClientIP = stat.ClientIP
+	}
+	if row.AccountSnapshot == "" {
+		row.AccountSnapshot = stat.AccountSnapshot
+	}
+	if row.AuthLabelSnapshot == "" {
+		row.AuthLabelSnapshot = stat.AuthLabelSnapshot
+	}
+	if row.AuthProviderSnapshot == "" {
+		row.AuthProviderSnapshot = stat.AuthProviderSnapshot
 	}
 }
 
@@ -2278,6 +2412,16 @@ func costForAccountModelStat(stat store.AccountModelStat, prices map[string]stor
 }
 
 func costForAPIKeyModelStat(stat store.APIKeyModelStat, prices map[string]store.ModelPrice) float64 {
+	return pricing.CostForModelCandidatesWithServiceTier([]string{stat.BillingModel, stat.Model}, stat.ServiceTier, pricing.ModelTokens{
+		InputTokens:         stat.InputTokens,
+		OutputTokens:        stat.OutputTokens,
+		CachedTokens:        stat.CachedTokens,
+		CacheReadTokens:     stat.CacheReadTokens,
+		CacheCreationTokens: stat.CacheCreationTokens,
+	}, prices)
+}
+
+func costForIPModelStat(stat store.IPModelStat, prices map[string]store.ModelPrice) float64 {
 	return pricing.CostForModelCandidatesWithServiceTier([]string{stat.BillingModel, stat.Model}, stat.ServiceTier, pricing.ModelTokens{
 		InputTokens:         stat.InputTokens,
 		OutputTokens:        stat.OutputTokens,

@@ -785,6 +785,130 @@ func TestAnalyticsAccountAndAPIKeyStatsUseFullFilteredScope(t *testing.T) {
 	}
 }
 
+func TestAnalyticsBuildsIPStatsAndSkipsBlankIPs(t *testing.T) {
+	db := newMonitoringTestStore(t)
+	ctx := context.Background()
+	fromMS := int64(1_778_055_000_000)
+	toMS := fromMS + 60*60*1000
+	latencyA := int64(200)
+	latencyB := int64(400)
+	latencyC := int64(150)
+
+	if err := db.SaveModelPrices(ctx, map[string]store.ModelPrice{
+		"gpt-a": {Prompt: 1, Completion: 2},
+		"gpt-b": {Prompt: 2, Completion: 1},
+	}); err != nil {
+		t.Fatalf("save model prices: %v", err)
+	}
+
+	first := monitoringEvent("ip-a1", fromMS+1_000, "gpt-a", "auth-1", "source-a", false, 1_000_000, 500_000, 100_000, 0, 1_600_000, &latencyA)
+	first.ClientIP = "203.0.113.42"
+	first.AccountSnapshot = "team-alpha"
+	first.AuthLabelSnapshot = "Team Alpha"
+	first.AuthProviderSnapshot = "openai"
+
+	second := monitoringEvent("ip-a2", fromMS+2_000, "gpt-b", "auth-2", "source-b", true, 500_000, 250_000, 50_000, 0, 800_000, &latencyB)
+	second.ClientIP = "203.0.113.42"
+	second.AccountSnapshot = "team-beta"
+	second.AuthLabelSnapshot = "Team Beta"
+	second.AuthProviderSnapshot = "anthropic"
+
+	blankIP := monitoringEvent("ip-blank", fromMS+3_000, "gpt-a", "auth-3", "source-c", false, 900_000, 0, 0, 0, 900_000, nil)
+
+	third := monitoringEvent("ip-b1", fromMS+4_000, "gpt-a", "auth-4", "source-d", false, 250_000, 250_000, 0, 0, 500_000, &latencyC)
+	third.ClientIP = "198.51.100.7"
+	third.AccountSnapshot = "team-gamma"
+	third.AuthLabelSnapshot = "Team Gamma"
+	third.AuthProviderSnapshot = "openai"
+
+	if _, err := db.InsertEvents(ctx, []usage.Event{first, second, blankIP, third}); err != nil {
+		t.Fatalf("insert events: %v", err)
+	}
+
+	resp, err := New(db).Analytics(ctx, Request{
+		FromMS:  fromMS,
+		ToMS:    toMS,
+		Include: Include{IPStats: true},
+	})
+	if err != nil {
+		t.Fatalf("analytics: %v", err)
+	}
+	if len(resp.IPStats) != 2 {
+		t.Fatalf("ip stats = %#v", resp.IPStats)
+	}
+
+	top := resp.IPStats[0]
+	if top.ClientIP != "203.0.113.42" || top.Calls != 2 || top.SuccessCalls != 1 ||
+		top.FailureCalls != 1 || math.Abs(top.SuccessRate-0.5) > 0.000001 ||
+		top.InputTokens != 1_500_000 || top.OutputTokens != 750_000 ||
+		top.ReasoningTokens != 150_000 || top.TotalTokens != 2_400_000 {
+		t.Fatalf("top ip stat = %#v", top)
+	}
+	if top.AvgLatencyMS == nil || math.Abs(*top.AvgLatencyMS-300) > 0.000001 {
+		t.Fatalf("top ip latency = %#v", top.AvgLatencyMS)
+	}
+	if math.Abs(top.Cost-3.25) > 0.000001 {
+		t.Fatalf("top ip cost = %v", top.Cost)
+	}
+	if len(top.AuthIndices) != 2 || top.AuthIndices[0] != "auth-1" || top.AuthIndices[1] != "auth-2" {
+		t.Fatalf("top ip auth indices = %#v", top.AuthIndices)
+	}
+	if len(top.SourceHashes) != 2 || top.SourceHashes[0] != "source-a" || top.SourceHashes[1] != "source-b" {
+		t.Fatalf("top ip source hashes = %#v", top.SourceHashes)
+	}
+	if top.LastSeenMS != second.TimestampMS {
+		t.Fatalf("top ip last seen = %d, want %d", top.LastSeenMS, second.TimestampMS)
+	}
+	if resp.IPStats[1].ClientIP != "198.51.100.7" || resp.IPStats[1].Calls != 1 {
+		t.Fatalf("second ip stat = %#v", resp.IPStats[1])
+	}
+}
+
+func TestAnalyticsIPStatsRespectFiltersAndIncludeFlag(t *testing.T) {
+	db := newMonitoringTestStore(t)
+	ctx := context.Background()
+	fromMS := int64(1_778_056_000_000)
+	toMS := fromMS + 60*60*1000
+
+	first := monitoringEvent("ip-filter-a", fromMS+1_000, "gpt-a", "auth-1", "source-a", false, 100, 50, 0, 0, 150, nil)
+	first.ClientIP = "203.0.113.42"
+	second := monitoringEvent("ip-filter-b", fromMS+2_000, "gpt-b", "auth-1", "source-a", false, 200, 60, 0, 0, 260, nil)
+	second.ClientIP = "203.0.113.42"
+	blankIP := monitoringEvent("ip-filter-blank", fromMS+3_000, "gpt-a", "auth-2", "source-b", false, 300, 70, 0, 0, 370, nil)
+
+	if _, err := db.InsertEvents(ctx, []usage.Event{first, second, blankIP}); err != nil {
+		t.Fatalf("insert events: %v", err)
+	}
+
+	resp, err := New(db).Analytics(ctx, Request{
+		FromMS:  fromMS,
+		ToMS:    toMS,
+		Include: Include{Summary: true},
+	})
+	if err != nil {
+		t.Fatalf("analytics without ip stats: %v", err)
+	}
+	if resp.IPStats != nil {
+		t.Fatalf("ip stats should be omitted when include.ip_stats=false: %#v", resp.IPStats)
+	}
+
+	filtered, err := New(db).Analytics(ctx, Request{
+		FromMS: fromMS,
+		ToMS:   toMS,
+		Filters: Filters{
+			Models: []string{"gpt-a"},
+		},
+		Include: Include{IPStats: true},
+	})
+	if err != nil {
+		t.Fatalf("analytics with ip stats filter: %v", err)
+	}
+	if len(filtered.IPStats) != 1 || filtered.IPStats[0].ClientIP != "203.0.113.42" ||
+		filtered.IPStats[0].Calls != 1 || filtered.IPStats[0].TotalTokens != 150 {
+		t.Fatalf("filtered ip stats = %#v", filtered.IPStats)
+	}
+}
+
 func TestAnalyticsSearchMatchesResolvedModelAndProjectID(t *testing.T) {
 	db := newMonitoringTestStore(t)
 	ctx := context.Background()

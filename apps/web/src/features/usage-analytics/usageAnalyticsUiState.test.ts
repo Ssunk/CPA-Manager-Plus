@@ -161,12 +161,12 @@ describe('usageAnalyticsUiState', () => {
   it('builds ui state from usage analytics query parameters', () => {
     const state = buildUsageAnalyticsUiStateFromSearchParams(
       new URLSearchParams(
-        'tab=apiKeys&time_range=custom&from_ms=1000&to_ms=2000&granularity=day&model=gpt-4o&api_key_hash=ABC&provider=OpenAI&auth_file=auth.json&status=failed&search=req-42&min_latency_ms=10000&cache_status=hit&api_key_keyword=key'
+        'tab=ips&time_range=custom&from_ms=1000&to_ms=2000&granularity=day&model=gpt-4o&api_key_hash=ABC&provider=OpenAI&auth_file=auth.json&status=failed&search=req-42&min_latency_ms=10000&cache_status=hit&api_key_keyword=key'
       )
     );
 
     expect(state).toEqual({
-      activeTab: 'apiKeys',
+      activeTab: 'ips',
       filters: {
         ...USAGE_ANALYTICS_DEFAULT_FILTERS,
         timeRange: 'custom',
@@ -187,7 +187,7 @@ describe('usageAnalyticsUiState', () => {
 
   it('serializes non-default usage analytics state into query parameters', () => {
     const params = buildUsageAnalyticsSearchParams({
-      activeTab: 'apiKeys',
+      activeTab: 'ips',
       filters: {
         ...USAGE_ANALYTICS_DEFAULT_FILTERS,
         timeRange: 'custom',
@@ -205,7 +205,7 @@ describe('usageAnalyticsUiState', () => {
       },
     });
 
-    expect(params.get('tab')).toBe('apiKeys');
+    expect(params.get('tab')).toBe('ips');
     expect(params.get('time_range')).toBe('custom');
     expect(params.get('from_ms')).toBe('1000');
     expect(params.get('to_ms')).toBe('2000');

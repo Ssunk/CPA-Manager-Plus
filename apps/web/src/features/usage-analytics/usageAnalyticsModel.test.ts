@@ -3,12 +3,14 @@ import type { MonitoringAnalyticsResponse } from '@/services/api/usageService';
 import { buildSourceInfoMap } from '@/utils/sourceResolver';
 import type { UsageRankRow } from './usageAnalyticsModel';
 import {
+  adaptUsageAnalyticsData,
   analyzeUsageBucket,
   buildApiKeyRows,
   buildCredentialRows,
   buildSelectedApiKeyTrendSeries,
   buildSelectedCredentialTrendSeries,
   buildDrilldownPreview,
+  buildIPRows,
   buildKeyAnomalies,
   buildModelKeyDistribution,
   buildMonitoringDetailUrl,
@@ -96,6 +98,7 @@ describe('usage analytics request model', () => {
       timeline: true,
       model_stats: true,
       api_key_stats: true,
+      ip_stats: true,
       credential_timeline: true,
       filter_options: true,
       granularity: 'day',
@@ -628,6 +631,140 @@ describe('usage analytics adapters', () => {
       sourceHash: 'source-hash-a',
     });
     expect(maskApiKeyHash('sk-live-raw-secret-value')).toBe('sk-****alue');
+  });
+
+  it('builds IP rows and adapts analytics responses with ip_stats', () => {
+    const ipStats: NonNullable<MonitoringAnalyticsResponse['ip_stats']> = [
+      {
+        id: '203.0.113.42',
+        client_ip: '203.0.113.42',
+        account_snapshot: 'team-alpha',
+        auth_label_snapshot: 'Team Alpha',
+        auth_provider_snapshot: 'openai',
+        auth_indices: ['auth-1', 'auth-2'],
+        source_hashes: ['source-a', 'source-b'],
+        calls: 5,
+        success_calls: 4,
+        failure_calls: 1,
+        success_rate: 0.8,
+        input_tokens: 100,
+        output_tokens: 20,
+        cached_tokens: 5,
+        cache_read_tokens: 3,
+        cache_creation_tokens: 2,
+        reasoning_tokens: 4,
+        total_tokens: 129,
+        cost: 1.25,
+        average_latency_ms: 250,
+        last_seen_ms: NOW_MS,
+      },
+      {
+        id: '198.51.100.20',
+        client_ip: '198.51.100.20',
+        calls: 5,
+        success_calls: 5,
+        failure_calls: 0,
+        success_rate: 1,
+        input_tokens: 120,
+        output_tokens: 30,
+        cached_tokens: 0,
+        cache_read_tokens: 0,
+        cache_creation_tokens: 0,
+        reasoning_tokens: 0,
+        total_tokens: 150,
+        cost: 1.25,
+        average_latency_ms: 100,
+        last_seen_ms: NOW_MS - HOUR_MS,
+      },
+      {
+        id: '',
+        client_ip: '',
+        calls: 99,
+        success_calls: 99,
+        failure_calls: 0,
+        success_rate: 1,
+        input_tokens: 0,
+        output_tokens: 0,
+        cached_tokens: 0,
+        cache_read_tokens: 0,
+        cache_creation_tokens: 0,
+        reasoning_tokens: 0,
+        total_tokens: 0,
+        cost: 99,
+        average_latency_ms: null,
+        last_seen_ms: NOW_MS,
+      },
+    ];
+
+    const rows = buildIPRows(ipStats, {
+      requestCount: 10,
+      totalTokens: 279,
+      inputTokens: 220,
+      outputTokens: 50,
+      cachedTokens: 5,
+      cacheReadTokens: 3,
+      cacheCreationTokens: 2,
+      estimatedCost: 2.5,
+      averageCostPerCall: 0.25,
+      successRate: 0.9,
+      failureCount: 1,
+      averageLatencyMs: 180,
+      p95LatencyMs: null,
+      p95TtftMs: null,
+      rpm30m: 0,
+      tpm30m: 0,
+    });
+
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toMatchObject({
+      id: '203.0.113.42',
+      label: '203.0.113.42',
+      provider: 'openai',
+      account: 'team-alpha',
+      authIndex: 'auth-1',
+      sourceHash: 'source-a',
+      requestCount: 5,
+      successRate: 0.8,
+      estimatedCost: 1.25,
+      averageLatencyMs: 250,
+      share: 0.5,
+    });
+    expect(rows[1].label).toBe('198.51.100.20');
+
+    const adapted = adaptUsageAnalyticsData(
+      {
+        generated_at_ms: NOW_MS,
+        granularity: 'hour',
+        summary: {
+          total_calls: 10,
+          success_calls: 9,
+          failure_calls: 1,
+          success_rate: 0.9,
+          input_tokens: 220,
+          output_tokens: 50,
+          cached_tokens: 5,
+          cache_read_tokens: 3,
+          cache_creation_tokens: 2,
+          reasoning_tokens: 4,
+          total_tokens: 279,
+          total_cost: 2.5,
+          average_latency_ms: 180,
+          zero_token_calls: 0,
+          rpm_30m: 0,
+          tpm_30m: 0,
+          avg_daily_requests: 0,
+          avg_daily_tokens: 0,
+          approx_tasks: 0,
+          approx_task_failures: 0,
+          approx_task_success_rate: 0,
+          zero_token_models: [],
+        },
+        ip_stats: ipStats,
+      },
+      'hour'
+    );
+    expect(adapted.ipRows).toHaveLength(2);
+    expect(adaptUsageAnalyticsData(undefined, 'hour').ipRows).toEqual([]);
   });
 
   it('resolves API key aliases by hash across analytics views', () => {

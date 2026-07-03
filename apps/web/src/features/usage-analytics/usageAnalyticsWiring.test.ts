@@ -23,6 +23,7 @@ const usageAnalyticsKeys = [
   'usage_analytics.tab_models',
   'usage_analytics.tab_apiKeys',
   'usage_analytics.tab_credentials',
+  'usage_analytics.tab_ips',
   'usage_analytics.tab_heatmap',
   'usage_analytics.all',
   'usage_analytics.awaiting_refresh',
@@ -172,6 +173,8 @@ const usageAnalyticsKeys = [
   'usage_analytics.active_models',
   'usage_analytics.active_api_keys',
   'usage_analytics.active_credentials',
+  'usage_analytics.active_ips',
+  'usage_analytics.active_ip_hint',
   'usage_analytics.total_cost',
   'usage_analytics.anomaly_keys',
   'usage_analytics.anomaly_credentials',
@@ -195,6 +198,7 @@ const usageAnalyticsKeys = [
   'usage_analytics.api_key_rank_title',
   'usage_analytics.api_key_warning_title',
   'usage_analytics.credential_rank_title',
+  'usage_analytics.ip_rank_title',
   'usage_analytics.credential_warning_title',
   'usage_analytics.credential_warning_summary',
   'usage_analytics.credential_warning_selected_only',
@@ -250,7 +254,9 @@ const usageAnalyticsKeys = [
   'usage_analytics.col_model',
   'usage_analytics.col_api_key',
   'usage_analytics.col_credential',
+  'usage_analytics.col_ip',
   'usage_analytics.col_time',
+  'usage_analytics.col_last_seen',
   'usage_analytics.col_severity',
   'usage_analytics.col_anomaly_type',
   'usage_analytics.col_action',
@@ -359,6 +365,12 @@ describe('usage analytics app wiring', () => {
     expect(pageSource).not.toContain('<b>${item.name}</b>');
     expect(pageSource).toMatch(/escapeHtml\(\s*item\.name/);
     expect(pageSource).toContain("${entry.marker ?? ''}${escapeHtml(entry.seriesName)}");
+  });
+
+  it('keeps the IP ranking tab wired into Usage Analytics', () => {
+    expect(pageSource).toContain("usage.activeTab === 'ips'");
+    expect(pageSource).toContain("t('usage_analytics.ip_rank_title')");
+    expect(pageSource).toContain('rows={usage.ipRows}');
   });
 
   it('keeps Usage Analytics i18n keys present in every locale', () => {

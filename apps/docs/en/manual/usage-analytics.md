@@ -19,6 +19,7 @@ Filters include model, API key, provider, status, auth file, latency, and cache 
 - **Model ranking**: the most expensive, most active, or least healthy models.
 - **API Key ranking**: callers responsible for cost or failures.
 - **Credential ranking**: account-level usage, useful with quota and inspection.
+- **IP ranking**: client IP usage ranking, with a direct jump to request details in Monitoring.
 - **Trend charts**: request volume, cost, tokens, and failure rate over time.
 - **Anomaly points**: sudden changes in cost, tokens, or failures.
 - **Heatmap**: peak and quiet hours for scheduling decisions.

@@ -650,6 +650,7 @@ export interface MonitoringAnalyticsInclude {
   credential_stats?: boolean;
   credential_timeline?: boolean;
   api_key_stats?: boolean;
+  ip_stats?: boolean;
   filter_options?: boolean;
   heatmap?: boolean;
   anomaly_points?: boolean;
@@ -975,6 +976,30 @@ export interface MonitoringAnalyticsApiKeyContextRow {
   last_seen_ms: number;
 }
 
+export interface MonitoringAnalyticsIPStatRow {
+  id: string;
+  client_ip: string;
+  account_snapshot?: string;
+  auth_label_snapshot?: string;
+  auth_provider_snapshot?: string;
+  auth_indices?: string[];
+  source_hashes?: string[];
+  calls: number;
+  success_calls: number;
+  failure_calls: number;
+  success_rate: number;
+  input_tokens: number;
+  output_tokens: number;
+  cached_tokens: number;
+  cache_read_tokens: number;
+  cache_creation_tokens: number;
+  reasoning_tokens: number;
+  total_tokens: number;
+  cost: number;
+  average_latency_ms: number | null;
+  last_seen_ms: number;
+}
+
 export interface MonitoringAnalyticsFilterOptions {
   account_stats?: MonitoringAnalyticsAccountStatRow[];
   api_key_stats?: MonitoringAnalyticsApiKeyStatRow[];
@@ -1216,6 +1241,7 @@ export interface MonitoringAnalyticsResponse {
   credential_stats?: MonitoringAnalyticsCredentialStatRow[];
   credential_timeline?: MonitoringAnalyticsCredentialTimelinePoint[];
   api_key_stats?: MonitoringAnalyticsApiKeyStatRow[];
+  ip_stats?: MonitoringAnalyticsIPStatRow[];
   filter_options?: MonitoringAnalyticsFilterOptions;
   task_buckets?: MonitoringAnalyticsTaskBucketRow[];
   recent_failures?: MonitoringAnalyticsRecentFailure[];

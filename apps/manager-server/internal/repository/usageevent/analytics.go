@@ -273,6 +273,31 @@ type APIKeyModelStat struct {
 	LatencySamples       int64
 }
 
+type IPModelStat struct {
+	ClientIP             string
+	AccountSnapshot      string
+	AuthLabelSnapshot    string
+	AuthProviderSnapshot string
+	AuthIndex            string
+	SourceHash           string
+	Model                string
+	BillingModel         string
+	ServiceTier          string
+	Calls                int64
+	SuccessCalls         int64
+	FailureCalls         int64
+	InputTokens          int64
+	OutputTokens         int64
+	ReasoningTokens      int64
+	CachedTokens         int64
+	CacheReadTokens      int64
+	CacheCreationTokens  int64
+	TotalTokens          int64
+	LastSeenMS           int64
+	AvgLatencyMS         sql.NullFloat64
+	LatencySamples       int64
+}
+
 type TaskBucket struct {
 	BucketKey           string
 	Total               int64
@@ -1387,6 +1412,74 @@ order by max(timestamp_ms) desc, count(*) desc`, args...)
 			&stat.FailureCalls,
 			&stat.InputTokens,
 			&stat.OutputTokens,
+			&stat.CachedTokens,
+			&stat.CacheReadTokens,
+			&stat.CacheCreationTokens,
+			&stat.TotalTokens,
+			&stat.LastSeenMS,
+			&stat.AvgLatencyMS,
+			&stat.LatencySamples,
+		); err != nil {
+			return nil, err
+		}
+		stats = append(stats, stat)
+	}
+	return stats, rows.Err()
+}
+
+func (r *repository) IPStatsWithFilter(ctx context.Context, filter AnalyticsFilter) ([]IPModelStat, error) {
+	where, args := analyticsWhere(filter)
+	rows, err := r.db.QueryContext(ctx, `select
+	coalesce(client_ip, ''),
+	coalesce(account_snapshot, ''),
+	coalesce(auth_label_snapshot, ''),
+	coalesce(nullif(auth_provider_snapshot, ''), provider, ''),
+	coalesce(auth_index, ''),
+	coalesce(source_hash, ''),
+	model,
+	coalesce(nullif(resolved_model, ''), model) as billing_model,
+	coalesce(service_tier, '') as service_tier,
+	count(*),
+	sum(case when failed = 0 then 1 else 0 end),
+	sum(case when failed = 1 then 1 else 0 end),
+	coalesce(sum(input_tokens), 0),
+	coalesce(sum(output_tokens), 0),
+	coalesce(sum(reasoning_tokens), 0),
+	coalesce(sum(`+compatCachedExpr+`), 0),
+	coalesce(sum(cache_read_tokens), 0),
+	coalesce(sum(cache_creation_tokens), 0),
+	coalesce(sum(total_tokens), 0),
+	max(timestamp_ms),
+	avg(nullif(latency_ms, 0)),
+	count(nullif(latency_ms, 0))
+from usage_events `+where+`
+and trim(coalesce(client_ip, '')) <> ''
+group by client_ip, account_snapshot, auth_label_snapshot, coalesce(nullif(auth_provider_snapshot, ''), provider, ''), auth_index, source_hash, model, billing_model, coalesce(service_tier, '')
+order by count(*) desc, max(timestamp_ms) desc, client_ip asc`, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	stats := make([]IPModelStat, 0)
+	for rows.Next() {
+		var stat IPModelStat
+		if err := rows.Scan(
+			&stat.ClientIP,
+			&stat.AccountSnapshot,
+			&stat.AuthLabelSnapshot,
+			&stat.AuthProviderSnapshot,
+			&stat.AuthIndex,
+			&stat.SourceHash,
+			&stat.Model,
+			&stat.BillingModel,
+			&stat.ServiceTier,
+			&stat.Calls,
+			&stat.SuccessCalls,
+			&stat.FailureCalls,
+			&stat.InputTokens,
+			&stat.OutputTokens,
+			&stat.ReasoningTokens,
 			&stat.CachedTokens,
 			&stat.CacheReadTokens,
 			&stat.CacheCreationTokens,

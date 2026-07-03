@@ -1759,6 +1759,87 @@ const buildMonitoringAnalytics = (
     };
   });
 
+  const ipStats = [
+    {
+      id: '203.0.113.42',
+      client_ip: '203.0.113.42',
+      account_snapshot: 'Platform Team',
+      auth_label_snapshot: 'Codex Team',
+      auth_provider_snapshot: 'codex',
+      auth_indices: ['codex-team-01', 'codex-fallback-02'],
+      source_hashes: ['src_codex_team', 'src_fallback_pool'],
+      calls: 4860,
+      failure_calls: 58,
+      total_tokens: 3_860_000,
+      cost: 74.8,
+      average_latency_ms: 1260,
+      last_seen_ms: analyticsNow - 5 * minute,
+    },
+    {
+      id: '198.51.100.17',
+      client_ip: '198.51.100.17',
+      account_snapshot: 'Gemini Production',
+      auth_label_snapshot: 'Gemini Production',
+      auth_provider_snapshot: 'gemini',
+      auth_indices: ['gemini-prod-01', 'vertex-regional-01'],
+      source_hashes: ['src_gemini_prod', 'src_vertex_regional'],
+      calls: 4380,
+      failure_calls: 66,
+      total_tokens: 5_120_000,
+      cost: 118.6,
+      average_latency_ms: 1120,
+      last_seen_ms: analyticsNow - 7 * minute,
+    },
+    {
+      id: '192.0.2.88',
+      client_ip: '192.0.2.88',
+      account_snapshot: 'Research Team',
+      auth_label_snapshot: 'Claude Team',
+      auth_provider_snapshot: 'claude',
+      auth_indices: ['claude-team-01'],
+      source_hashes: ['src_claude_team'],
+      calls: 3120,
+      failure_calls: 84,
+      total_tokens: 4_620_000,
+      cost: 132.4,
+      average_latency_ms: 1410,
+      last_seen_ms: analyticsNow - 13 * minute,
+    },
+    {
+      id: '203.0.113.91',
+      client_ip: '203.0.113.91',
+      account_snapshot: 'OpenAI Compatible',
+      auth_label_snapshot: 'OpenAI Primary',
+      auth_provider_snapshot: 'openai',
+      auth_indices: ['openai-primary'],
+      source_hashes: ['src_openai_primary'],
+      calls: 2680,
+      failure_calls: 24,
+      total_tokens: 1_980_000,
+      cost: 36.7,
+      average_latency_ms: 1040,
+      last_seen_ms: analyticsNow - 9 * minute,
+    },
+  ].map((row) => {
+    const tokenSplit = splitTokens(row.total_tokens);
+    const successCalls = row.calls - row.failure_calls;
+    return {
+      ...row,
+      success_calls: successCalls,
+      success_rate: safeRate(successCalls, row.calls),
+      input_tokens: tokenSplit.input_tokens,
+      output_tokens: tokenSplit.output_tokens,
+      cached_tokens: tokenSplit.cached_tokens,
+      cache_read_tokens: tokenSplit.cache_read_tokens,
+      cache_creation_tokens: tokenSplit.cache_creation_tokens,
+      reasoning_tokens:
+        row.total_tokens -
+        tokenSplit.input_tokens -
+        tokenSplit.output_tokens -
+        tokenSplit.cached_tokens,
+    };
+  });
+
   const channelShare = accountStats.map((row) => ({
     auth_index: row.auth_indices?.[0] ?? row.id,
     source: row.sources?.[0],
@@ -2319,6 +2400,7 @@ const buildMonitoringAnalytics = (
     credential_stats: credentialStats,
     credential_timeline: credentialTimeline,
     api_key_stats: apiKeyStats,
+    ip_stats: ipStats,
     filter_options: {
       account_stats: accountStats,
       api_key_stats: apiKeyStats,

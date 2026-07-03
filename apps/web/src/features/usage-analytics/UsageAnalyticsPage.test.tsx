@@ -173,6 +173,17 @@ const createUsageState = (overrides: Record<string, unknown> = {}) => {
       }),
     ],
   });
+  const ipRow = createRankRow({
+    id: '203.0.113.42',
+    label: '203.0.113.42',
+    model: undefined,
+    provider: 'openai',
+    account: 'team-alpha',
+    authIndex: 'auth-1',
+    sourceHash: 'source-hash-a',
+    averageLatencyMs: 250,
+    lastSeenMs: point.bucketMs,
+  });
 
   return {
     filters: USAGE_ANALYTICS_DEFAULT_FILTERS,
@@ -212,6 +223,7 @@ const createUsageState = (overrides: Record<string, unknown> = {}) => {
     modelRows: [modelRow],
     apiKeyRows: [apiKeyRow],
     credentialRows: [credentialRow],
+    ipRows: [ipRow],
     allCredentialRows: [credentialRow],
     providerRows: [
       {
@@ -827,6 +839,33 @@ describe('UsageAnalyticsPage', () => {
     clickHostButton(findHostButtonByText(renderer, 'usage_analytics.view_request_details'));
     expect(mocks.navigate).toHaveBeenCalledWith(
       '/monitoring?from_ms=1780000000000&to_ms=1780003600000&auth_file=auth.json&project_id=project-1&search=req-42&min_latency_ms=10000&cache_status=miss'
+    );
+  });
+
+  it('renders the IP tab as a ranking table and drills into monitoring search', () => {
+    mocks.usageState = createUsageState({
+      activeTab: 'ips',
+      filters: {
+        ...USAGE_ANALYTICS_DEFAULT_FILTERS,
+        provider: 'OpenAI',
+        status: 'failed',
+      },
+    });
+    const renderer = renderPage();
+    const text = getText(renderer.root);
+
+    expect(text).toContain('usage_analytics.tab_ips');
+    expect(text).toContain('usage_analytics.active_ips');
+    expect(text).toContain('usage_analytics.ip_rank_title');
+    expect(text).toContain('usage_analytics.col_ip');
+    expect(text).toContain('usage_analytics.col_last_seen');
+    expect(text).toContain('203.0.113.42');
+    expect(text).not.toContain('usage_analytics.selected_credential_trend_title');
+    expect(text).not.toContain('usage_analytics.api_key_context_title');
+
+    clickHostButton(findHostButtonByText(renderer, 'usage_analytics.view_request_details'));
+    expect(mocks.navigate).toHaveBeenCalledWith(
+      '/monitoring?from_ms=1780000000000&to_ms=1780003600000&provider=openai&status=failed&search=203.0.113.42'
     );
   });
 

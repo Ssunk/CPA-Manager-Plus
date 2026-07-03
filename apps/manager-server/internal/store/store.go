@@ -63,6 +63,7 @@ type AccountModelStat = usageevent.AccountModelStat
 type CredentialModelStat = usageevent.CredentialModelStat
 type CredentialTimelinePoint = usageevent.CredentialTimelinePoint
 type APIKeyModelStat = usageevent.APIKeyModelStat
+type IPModelStat = usageevent.IPModelStat
 type TaskBucket = usageevent.TaskBucket
 type EventPageItem = usageevent.EventPageItem
 type EventsPage = usageevent.EventsPage
@@ -380,6 +381,10 @@ func (s *Store) CredentialTimelineWithFilter(ctx context.Context, filter Analyti
 
 func (s *Store) APIKeyModelStatsWithFilter(ctx context.Context, filter AnalyticsFilter) ([]APIKeyModelStat, error) {
 	return s.UsageEvents.APIKeyModelStatsWithFilter(ctx, filter)
+}
+
+func (s *Store) IPStatsWithFilter(ctx context.Context, filter AnalyticsFilter) ([]IPModelStat, error) {
+	return s.UsageEvents.IPStatsWithFilter(ctx, filter)
 }
 
 func (s *Store) TaskBucketsWithFilter(ctx context.Context, filter AnalyticsFilter) ([]TaskBucket, error) {

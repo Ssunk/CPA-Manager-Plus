@@ -2171,6 +2171,77 @@ function ApiKeyContextTable({ locale, rows }: { locale: string; rows: UsageApiKe
   );
 }
 
+function IPRankTable({
+  locale,
+  rows,
+  onOpen,
+}: {
+  locale: string;
+  rows: UsageRankRow[];
+  onOpen: (row: UsageRankRow) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div className={styles.tableWrap}>
+      <table className={styles.compactTable}>
+        <thead>
+          <tr>
+            <th>{t('usage_analytics.col_rank')}</th>
+            <th>{t('usage_analytics.col_ip')}</th>
+            <th>{t('usage_analytics.metric_request_count')}</th>
+            <th>{t('usage_analytics.success_rate')}</th>
+            <th>{t('usage_analytics.metric_average_latency')}</th>
+            <th>{t('usage_analytics.metric_total_tokens')}</th>
+            <th>{t('usage_analytics.metric_estimated_cost')}</th>
+            <th>{t('usage_analytics.col_last_seen')}</th>
+            <th>{t('usage_analytics.col_action')}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.length === 0 ? (
+            <tr>
+              <td colSpan={9}>{t('usage_analytics.empty_title')}</td>
+            </tr>
+          ) : (
+            rows.map((row, index) => (
+              <tr key={row.id}>
+                <td>{index + 1}</td>
+                <td title={row.label}>
+                  <span className={styles.entityCell}>
+                    <IconShield size={16} />
+                    {row.label}
+                  </span>
+                </td>
+                <td>{compactNumber(row.requestCount)}</td>
+                <td
+                  className={
+                    row.requestCount > 0 && row.successRate < USAGE_SUCCESS_RATE_WATCH_THRESHOLD
+                      ? styles.tonebad
+                      : ''
+                  }
+                >
+                  {formatPercent(row.successRate)}
+                </td>
+                <td>
+                  {row.averageLatencyMs === null ? '-' : formatUsageDurationMs(row.averageLatencyMs)}
+                </td>
+                <td>{compactNumber(row.totalTokens)}</td>
+                <td>{formatMetricValue('estimatedCost', row.estimatedCost)}</td>
+                <td>{row.lastSeenMs ? formatLocalDateTime(row.lastSeenMs, locale) : '-'}</td>
+                <td>
+                  <button type="button" className={styles.linkButton} onClick={() => onOpen(row)}>
+                    {t('usage_analytics.view_request_details')}
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function ProviderOverviewPanel({
   rows,
   onOpen,
@@ -2391,6 +2462,17 @@ function UsageAnalyticsPageInner() {
       : `/monitoring?auth_file=${encodeURIComponent(row?.authFile || '')}&project_id=${encodeURIComponent(
           row?.projectId || ''
         )}`;
+  const buildIPMonitoringUrl = (clientIp: string, status?: UsageAnalyticsStatus) =>
+    usage.bounds
+      ? buildMonitoringDetailUrl(
+          { bucketMs: usage.bounds.fromMs, bucketEndMs: usage.bounds.toMs },
+          {
+            ...usage.filters,
+            searchQuery: clientIp,
+            status: status ?? usage.filters.status,
+          }
+        )
+      : `/monitoring?search=${encodeURIComponent(clientIp)}`;
   const openApiKeyCombinationHeatmap = () => {
     const apiKeyHash = usage.selectedApiKey?.apiKeyHash || usage.selectedApiKey?.id || '';
     if (apiKeyHash) {
@@ -2601,6 +2683,20 @@ function UsageAnalyticsPageInner() {
         t,
       }),
     [i18n.language, t, usage.summary]
+  );
+  const ipSummaryCards = useMemo(
+    () =>
+      buildUsageEntitySummaryCards({
+        activeAccent: 'green',
+        activeCount: usage.ipRows.length,
+        activeIcon: 'calls',
+        activeLabel: t('usage_analytics.active_ips'),
+        activeMeta: t('usage_analytics.active_ip_hint'),
+        locale: i18n.language,
+        summary: usage.summary,
+        t,
+      }),
+    [i18n.language, t, usage.ipRows.length, usage.summary]
   );
   const toggleMetric = (key: UsageMetricKey) => {
     setSelectedMetrics((current) =>
@@ -3342,6 +3438,25 @@ function UsageAnalyticsPageInner() {
                 }
               />
             </div>
+          </section>
+        </>
+      ) : null}
+
+      {usage.activeTab === 'ips' ? (
+        <>
+          <UsageSummarySection cards={ipSummaryCards} />
+          <section className={styles.tablePanel}>
+            <div className={styles.panelHeader}>
+              <div>
+                <h2>{t('usage_analytics.ip_rank_title')}</h2>
+                <p>{t('usage_analytics.active_ip_hint')}</p>
+              </div>
+            </div>
+            <IPRankTable
+              locale={i18n.language}
+              rows={usage.ipRows}
+              onOpen={(row) => navigate(buildIPMonitoringUrl(row.label))}
+            />
           </section>
         </>
       ) : null}

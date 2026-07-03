@@ -574,6 +574,7 @@ export function useUsageAnalytics() {
     modelRows: adapted.modelRows,
     apiKeyRows: adapted.apiKeyRows,
     credentialRows: adapted.credentialRows,
+    ipRows: adapted.ipRows,
     allCredentialRows: adapted.credentialRows,
     providerRows: adapted.providerRows,
     heatmap: adapted.heatmap,

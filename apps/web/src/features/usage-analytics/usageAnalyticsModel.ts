@@ -9,6 +9,7 @@ import type {
   MonitoringAnalyticsHeatmapContributor,
   MonitoringAnalyticsHeatmapPoint,
   MonitoringAnalyticsInclude,
+  MonitoringAnalyticsIPStatRow,
   MonitoringAnalyticsModelStat,
   MonitoringAnalyticsResponse,
   MonitoringAnalyticsSummary,
@@ -31,6 +32,7 @@ export type UsageAnalyticsTab =
   | 'models'
   | 'apiKeys'
   | 'credentials'
+  | 'ips'
   | 'heatmap';
 export type UsageAnalyticsTimeRange = '24h' | 'today' | 'yesterday' | '7d' | '30d' | 'custom';
 export type UsageAnalyticsGranularity = 'auto' | 'hour' | 'day';
@@ -457,6 +459,7 @@ export const USAGE_ANALYTICS_TABS: UsageAnalyticsTab[] = [
   'models',
   'apiKeys',
   'credentials',
+  'ips',
   'heatmap',
 ];
 
@@ -715,6 +718,7 @@ export const buildUsageAnalyticsInclude = (
     api_key_stats: true,
     credential_stats: true,
     credential_timeline: true,
+    ip_stats: true,
     filter_options: true,
     heatmap: true,
     anomaly_points: true,
@@ -1400,6 +1404,54 @@ export const buildCredentialRows = (
       (left, right) =>
         right.estimatedCost - left.estimatedCost ||
         right.requestCount - left.requestCount ||
+        left.label.localeCompare(right.label)
+    );
+};
+
+export const buildIPRows = (
+  rows: MonitoringAnalyticsIPStatRow[] = [],
+  summary?: UsageSummaryMetrics
+): UsageRankRow[] => {
+  const totalCost = summary?.estimatedCost ?? rows.reduce((sum, row) => sum + rowTotalCost(row), 0);
+  const totalTokens =
+    summary?.totalTokens ?? rows.reduce((sum, row) => sum + toNumber(row.total_tokens), 0);
+  return rows
+    .filter((row) => String(row.client_ip ?? '').trim())
+    .map((row) => {
+      const clientIp = String(row.client_ip ?? '').trim();
+      return {
+        id: row.id || clientIp || '-',
+        label: clientIp || '-',
+        provider: row.auth_provider_snapshot,
+        authIndex: row.auth_indices?.[0],
+        sourceHash: row.source_hashes?.[0],
+        account: row.account_snapshot || row.auth_label_snapshot,
+        requestCount: toNumber(row.calls),
+        successCount: toNumber(row.success_calls),
+        failureCount: toNumber(row.failure_calls),
+        successRate: toNumber(row.success_rate),
+        totalTokens: toNumber(row.total_tokens),
+        inputTokens: toNumber(row.input_tokens),
+        outputTokens: toNumber(row.output_tokens),
+        cachedTokens: toNumber(row.cached_tokens),
+        cacheReadTokens: toNumber(row.cache_read_tokens),
+        cacheCreationTokens: toNumber(row.cache_creation_tokens),
+        estimatedCost: rowTotalCost(row),
+        averageLatencyMs: row.average_latency_ms ?? null,
+        lastSeenMs: row.last_seen_ms,
+        share:
+          totalCost > 0
+            ? rowTotalCost(row) / totalCost
+            : totalTokens > 0
+              ? toNumber(row.total_tokens) / totalTokens
+              : 0,
+      };
+    })
+    .sort(
+      (left, right) =>
+        right.estimatedCost - left.estimatedCost ||
+        right.requestCount - left.requestCount ||
+        (right.lastSeenMs ?? 0) - (left.lastSeenMs ?? 0) ||
         left.label.localeCompare(right.label)
     );
 };
@@ -2203,6 +2255,7 @@ export const adaptUsageAnalyticsData = (
     summary,
     credentialDisplayContext
   );
+  const ipRows = buildIPRows(data?.ip_stats ?? [], summary);
   const providerRows = buildProviderRows(
     data?.channel_share ?? [],
     apiKeyRows,
@@ -2217,6 +2270,7 @@ export const adaptUsageAnalyticsData = (
     modelRows,
     apiKeyRows,
     credentialRows,
+    ipRows,
     providerRows,
     heatmap: buildUsageHeatmap(data?.heatmap ?? [], apiKeyDisplayMap),
     anomalyPoints: buildServerAnomalyPoints(data?.anomaly_points ?? []),
